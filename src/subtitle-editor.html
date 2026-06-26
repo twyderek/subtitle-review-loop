@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subtitle Editor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #121a2f;
+      --panel-2: #17223d;
+      --line: #2a3658;
+      --text: #e8eefc;
+      --muted: #9aa9ca;
+      --accent: #64d8ff;
+      --accent-2: #9df27d;
+      --danger: #ff8a8a;
+      --shadow: rgba(0, 0, 0, 0.35);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: var(--panel-2);
+      cursor: pointer;
+    }
+
+    a.doc-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      min-width: 84px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: var(--panel-2);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    a.doc-link:hover {
+      border-color: var(--accent);
+    }
+
+    button:hover {
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      border-color: #2d9fc6;
+      background: #0d5f80;
+    }
+
+    button.success {
+      border-color: #56b85e;
+      background: #1e7034;
+    }
+
+    button.icon {
+      width: 38px;
+      padding: 0;
+      font-size: 16px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 58px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #0e1629;
+      box-shadow: 0 8px 22px var(--shadow);
+      overflow-x: auto;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      min-width: 180px;
+      margin-right: 8px;
+      line-height: 1.2;
+    }
+
+    .title strong {
+      font-size: 15px;
+      white-space: nowrap;
+    }
+
+    .title span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .file-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      min-width: 112px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: var(--panel-2);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .file-button:hover {
+      border-color: var(--accent);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .search {
+      width: 240px;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: #0a1224;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: var(--accent);
+    }
+
+    .status {
+      margin-left: auto;
+      min-width: 190px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(430px, 46%) minmax(420px, 54%);
+      min-height: 0;
+    }
+
+    .viewer {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border-right: 1px solid var(--line);
+      background: #08101e;
+    }
+
+    video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #000;
+      box-shadow: 0 14px 28px var(--shadow);
+    }
+
+    .player-controls,
+    .cue-tools {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .cue-preview {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .cue-preview header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .current-text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      padding: 18px;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: center;
+      color: white;
+      text-shadow: 0 3px 0 #000, 0 0 8px #000;
+    }
+
+    .editor {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+      min-height: 0;
+      background: #0c1426;
+    }
+
+    .editor-head {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: #0e1629;
+    }
+
+    .metric {
+      min-height: 62px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+    }
+
+    .cue-list {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px 14px 20px;
+    }
+
+    .cue {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .cue.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .cue.changed {
+      border-color: #6b8b42;
+    }
+
+    .cue-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+    }
+
+    .cue-number {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .time {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .cue textarea {
+      width: 100%;
+      min-height: 74px;
+      resize: vertical;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: #091225;
+      outline: none;
+      line-height: 1.45;
+    }
+
+    .cue textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .rule-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .rule-chip.warn {
+      color: var(--danger);
+      border-color: #7e3d45;
+    }
+
+    @media (max-width: 960px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .viewer {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .editor-head,
+      .player-controls,
+      .cue-tools {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">
+        <strong>字幕校稿工作台</strong>
+        <span>影片同步預覽與 SRT 編輯</span>
+      </div>
+      <label class="file-button" for="videoFile">選影片</label>
+      <input id="videoFile" type="file" accept="video/*">
+      <label class="file-button" for="srtFile">選 SRT</label>
+      <input id="srtFile" type="file" accept=".srt,text/plain">
+      <button id="loadDefault" class="primary">載入預設</button>
+      <button id="applyRules">套用規範</button>
+      <button id="downloadSrt" class="success">下載 SRT</button>
+      <button id="saveSrt">另存檔案</button>
+      <a class="doc-link" href="VIDEO-SUBTITLE-WORKFLOW.md" target="_blank">流程</a>
+      <a class="doc-link" href="VIDEO-FACTORY-LOOP-PROMPT.md" target="_blank">提示詞</a>
+      <input id="search" class="search" type="search" placeholder="搜尋字幕文字">
+      <div id="status" class="status">尚未載入字幕</div>
+    </div>
+
+    <main class="workspace">
+      <section class="viewer">
+        <video id="video" controls preload="metadata" src="../workspace/media.mp4"></video>
+        <div class="player-controls">
+          <button id="back5">-5 秒</button>
+          <button id="playPause">播放/暫停</button>
+          <button id="forward5">+5 秒</button>
+          <button id="loopCue">循環本段</button>
+        </div>
+        <div class="cue-preview">
+          <header>
+            <span id="currentMeta">目前字幕</span>
+            <span id="currentRuleState">等待載入</span>
+          </header>
+          <div id="currentText" class="current-text">請載入字幕</div>
+        </div>
+      </section>
+
+      <section class="editor">
+        <div class="editor-head">
+          <div class="metric"><span>字幕段數</span><strong id="cueCount">0</strong></div>
+          <div class="metric"><span>已修改</span><strong id="changedCount">0</strong></div>
+          <div class="metric"><span>規範提醒</span><strong id="warningCount">0</strong></div>
+          <div class="metric"><span>目前時間</span><strong id="clock">00:00</strong></div>
+        </div>
+        <div class="cue-list" id="cueList"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const defaultSrtPath = "../workspace/media.rule-cleaned.srt";
+    const defaultVideoPath = "../workspace/media.mp4";
+    const fillerPattern = /(呃|啊|嗯|那個|就是|然後|這個|你知道吧|對吧)/;
+    const fillerPatternGlobal = /(呃|啊|嗯|那個|就是|然後|這個|你知道吧|對吧)/g;
+    const disallowedPunctuationPattern = /[，。,.、：:；;「」『』（）()《》〈〉【】\[\]“”"']/;
+    const disallowedPunctuationPatternGlobal = /[，。,.、：:；;「」『』（）()《》〈〉【】\[\]“”"']/g;
+    const termRules = [
+      [/Whisper\s*Desktop/gi, "WHISPERDESKTOP"],
+      [/\bwhisper\b/gi, "WHISPER"],
+      [/\bEverkin\b/gi, "EVERCAM"],
+      [/\bEvercam\b/gi, "EVERCAM"],
+      [/\bopen\s*ai\b/gi, "OPENAI"],
+      [/\bgpt[-\s]?4\b/gi, "GPT-4"],
+      [/\bdall[-\s]?e\b/gi, "DALL-E"],
+      [/\btoken\b/gi, "TOKEN"],
+      [/\bdefault\b/gi, "DEFAULT"],
+      [/\blms\b/gi, "LMS"],
+      [/\bmoodle\b/gi, "MOODLE"],
+      [/\be3\b/gi, "E3"],
+      [/\bkm\s*plus\b/gi, "KMPLUS"],
+      [/\bai\b/gi, "AI"],
+      [/\bapi\b/gi, "API"]
+    ];
+
+    const state = {
+      cues: [],
+      activeIndex: -1,
+      changed: new Set(),
+      search: "",
+      loopActive: false,
+      fileHandle: null
+    };
+
+    const video = document.getElementById("video");
+    const cueList = document.getElementById("cueList");
+    const status = document.getElementById("status");
+    const currentText = document.getElementById("currentText");
+    const currentMeta = document.getElementById("currentMeta");
+    const currentRuleState = document.getElementById("currentRuleState");
+    const cueCount = document.getElementById("cueCount");
+    const changedCount = document.getElementById("changedCount");
+    const warningCount = document.getElementById("warningCount");
+    const clock = document.getElementById("clock");
+
+    document.getElementById("videoFile").addEventListener("change", handleVideoFile);
+    document.getElementById("srtFile").addEventListener("change", handleSrtFile);
+    document.getElementById("loadDefault").addEventListener("click", loadDefaultAssets);
+    document.getElementById("applyRules").addEventListener("click", applyRulesToAll);
+    document.getElementById("downloadSrt").addEventListener("click", downloadSrt);
+    document.getElementById("saveSrt").addEventListener("click", saveSrt);
+    document.getElementById("search").addEventListener("input", (event) => {
+      state.search = event.target.value.trim();
+      renderCueList();
+    });
+    document.getElementById("back5").addEventListener("click", () => video.currentTime = Math.max(0, video.currentTime - 5));
+    document.getElementById("forward5").addEventListener("click", () => video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 5));
+    document.getElementById("playPause").addEventListener("click", () => video.paused ? video.play() : video.pause());
+    document.getElementById("loopCue").addEventListener("click", () => {
+      state.loopActive = !state.loopActive;
+      document.getElementById("loopCue").classList.toggle("primary", state.loopActive);
+    });
+
+    video.addEventListener("timeupdate", () => {
+      updateActiveCue();
+      clock.textContent = formatClock(video.currentTime);
+      if (state.loopActive && state.activeIndex >= 0) {
+        const cue = state.cues[state.activeIndex];
+        if (video.currentTime > cue.end) video.currentTime = cue.start;
+      }
+    });
+
+    loadDefaultAssets();
+
+    async function loadDefaultAssets() {
+      video.src = defaultVideoPath;
+      try {
+        const response = await fetch(defaultSrtPath, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        loadSrtText(text, "已載入預設字幕");
+      } catch (error) {
+        status.textContent = "請手動選擇 SRT，或用本地 server 開啟此頁";
+      }
+    }
+
+    function handleVideoFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      video.src = URL.createObjectURL(file);
+      status.textContent = `已載入影片：${file.name}`;
+    }
+
+    async function handleSrtFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      loadSrtText(text, `已載入字幕：${file.name}`);
+    }
+
+    function loadSrtText(text, message) {
+      state.cues = parseSrt(text);
+      state.activeIndex = -1;
+      state.changed.clear();
+      renderCueList();
+      updateStats();
+      updateActiveCue(true);
+      status.textContent = message;
+    }
+
+    function parseSrt(text) {
+      return text.replace(/^\uFEFF/, "")
+        .trim()
+        .split(/\r?\n\r?\n/)
+        .map((block, index) => {
+          const lines = block.split(/\r?\n/);
+          const timing = lines[1] || "";
+          const match = timing.match(/^(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})$/);
+          return {
+            id: index + 1,
+            startRaw: match ? match[1] : "00:00:00,000",
+            endRaw: match ? match[2] : "00:00:00,000",
+            start: match ? parseTime(match[1]) : 0,
+            end: match ? parseTime(match[2]) : 0,
+            text: lines.slice(2).join("\n").trim(),
+            originalText: lines.slice(2).join("\n").trim()
+          };
+        })
+        .filter((cue) => cue.text || cue.end > cue.start);
+    }
+
+    function renderCueList() {
+      cueList.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      const query = state.search.toLowerCase();
+      state.cues.forEach((cue, index) => {
+        if (query && !cue.text.toLowerCase().includes(query)) return;
+        const item = document.createElement("article");
+        item.className = "cue";
+        if (index === state.activeIndex) item.classList.add("active");
+        if (state.changed.has(index)) item.classList.add("changed");
+        item.dataset.index = String(index);
+        item.innerHTML = `
+          <div class="cue-meta">
+            <div class="cue-number">#${index + 1}</div>
+            <div class="time">${cue.startRaw}<br>${cue.endRaw}</div>
+            <button class="icon" title="跳到此段">▶</button>
+            <span class="${hasRuleWarning(cue.text) ? "rule-chip warn" : "rule-chip"}">${hasRuleWarning(cue.text) ? "需檢查" : "OK"}</span>
+          </div>
+          <textarea aria-label="字幕 ${index + 1}">${escapeHtml(cue.text)}</textarea>
+        `;
+        item.querySelector("button").addEventListener("click", () => jumpToCue(index));
+        item.querySelector("textarea").addEventListener("input", (event) => updateCue(index, event.target.value));
+        fragment.appendChild(item);
+      });
+      cueList.appendChild(fragment);
+      updateStats();
+    }
+
+    function updateCue(index, value) {
+      state.cues[index].text = value;
+      if (value !== state.cues[index].originalText) {
+        state.changed.add(index);
+      } else {
+        state.changed.delete(index);
+      }
+      const cueNode = cueList.querySelector(`[data-index="${index}"]`);
+      if (cueNode) {
+        cueNode.classList.toggle("changed", state.changed.has(index));
+        const chip = cueNode.querySelector(".rule-chip");
+        const warning = hasRuleWarning(value);
+        chip.textContent = warning ? "需檢查" : "OK";
+        chip.classList.toggle("warn", warning);
+      }
+      updateStats();
+      updateActiveCue(true);
+    }
+
+    function jumpToCue(index) {
+      const cue = state.cues[index];
+      video.currentTime = cue.start;
+      video.play();
+      setActiveCue(index);
+    }
+
+    function updateActiveCue(force = false) {
+      const time = video.currentTime;
+      const index = state.cues.findIndex((cue) => time >= cue.start && time <= cue.end);
+      if (!force && index === state.activeIndex) return;
+      setActiveCue(index);
+    }
+
+    function setActiveCue(index) {
+      state.activeIndex = index;
+      document.querySelectorAll(".cue.active").forEach((node) => node.classList.remove("active"));
+      if (index >= 0) {
+        const cue = state.cues[index];
+        const node = cueList.querySelector(`[data-index="${index}"]`);
+        if (node) node.classList.add("active");
+        currentText.textContent = cue.text || " ";
+        currentMeta.textContent = `#${index + 1} ${cue.startRaw} - ${cue.endRaw}`;
+        currentRuleState.textContent = hasRuleWarning(cue.text) ? "需檢查" : "規範通過";
+      } else {
+        currentText.textContent = "目前沒有字幕";
+        currentMeta.textContent = "目前字幕";
+        currentRuleState.textContent = "等待時間點";
+      }
+    }
+
+    function applyRulesToAll() {
+      state.cues = state.cues.map((cue, index) => {
+        const text = cleanSubtitleText(cue.text);
+        if (text !== cue.text) state.changed.add(index);
+        return { ...cue, text };
+      }).filter((cue) => cue.text.trim());
+      state.cues.forEach((cue, index) => cue.id = index + 1);
+      renderCueList();
+      updateActiveCue(true);
+      status.textContent = "已套用字幕處理規範";
+    }
+
+    function cleanSubtitleText(value) {
+      let text = value.trim();
+      for (const [pattern, replacement] of termRules) text = text.replace(pattern, replacement);
+      text = text.replace(/他/g, "它");
+      text = text.replace(fillerPatternGlobal, "  ");
+      text = text
+        .replace(/所以呢/g, "所以")
+        .replace(/之後呢/g, "之後")
+        .replace(/的話呢/g, "的話")
+        .replace(/時候呢/g, "時候");
+      text = text.replace(disallowedPunctuationPatternGlobal, "  ");
+      text = text.replace(/\t/g, " ").replace(/ {3,}/g, "  ").replace(/^ +| +$/g, "");
+      return text;
+    }
+
+    function hasRuleWarning(text) {
+      return fillerPattern.test(text) || disallowedPunctuationPattern.test(text) || /\b(whisper|openai|api|ai|moodle|token|default|lms|evercam|kmplus)\b/.test(text);
+    }
+
+    function updateStats() {
+      cueCount.textContent = String(state.cues.length);
+      changedCount.textContent = String(state.changed.size);
+      warningCount.textContent = String(state.cues.filter((cue) => hasRuleWarning(cue.text)).length);
+    }
+
+    function buildSrt() {
+      return state.cues.map((cue, index) => `${index + 1}\n${cue.startRaw} --> ${cue.endRaw}\n${cue.text.trim()}`).join("\n\n") + "\n";
+    }
+
+    function downloadSrt() {
+      const blob = new Blob([buildSrt()], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "media.edited.srt";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      status.textContent = "已下載 SRT";
+    }
+
+    async function saveSrt() {
+      if (!window.showSaveFilePicker) {
+        downloadSrt();
+        status.textContent = "瀏覽器不支援直接存檔，已改用下載";
+        return;
+      }
+      const handle = await window.showSaveFilePicker({
+        suggestedName: "media.edited.srt",
+        types: [{ description: "SRT subtitle", accept: { "text/plain": [".srt"] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(buildSrt());
+      await writable.close();
+      status.textContent = "已儲存 SRT";
+    }
+
+    function parseTime(value) {
+      const [hh, mm, rest] = value.split(":");
+      const [ss, ms] = rest.split(",");
+      return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + Number(ms) / 1000;
+    }
+
+    function formatClock(seconds) {
+      if (!Number.isFinite(seconds)) return "00:00";
+      const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+      const ss = String(Math.floor(seconds % 60)).padStart(2, "0");
+      return `${mm}:${ss}`;
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>

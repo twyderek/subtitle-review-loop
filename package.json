@@ -1,0 +1,14 @@
+{
+  "name": "subtitle-review-loop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Human-in-the-loop subtitle review workflow and browser editor.",
+  "scripts": {
+    "start": "node src/subtitle-editor-server.mjs",
+    "clean:subtitles": "node src/apply_subtitle_rules.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
