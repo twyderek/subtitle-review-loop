@@ -1,4 +1,4 @@
-# Subtitle Review Loop
+# Subtitle Review Loop for Codex
 
 A reusable workflow for creating, reviewing, cleaning, and exporting video
 subtitles with a human-in-the-loop quality gate.
@@ -198,7 +198,7 @@ overlap detection, cue length warnings, and encoding checks.
 
 ### 專案用途
 
-`Subtitle Review Loop` 是一套給教學影片、課程錄影、螢幕錄製教材使用的
+`Subtitle Review Loop` 是一套在Codex中專門提供給影片使用的
 字幕工作流程。它的核心目標是：先自動產生草稿字幕，再讓使用者一邊看影片
 一邊修正錯字、專有名詞與斷句，最後輸出可編輯字幕檔或燒字幕影片。
 
