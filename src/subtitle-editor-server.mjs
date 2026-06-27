@@ -15,7 +15,7 @@ const types = {
 
 http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split("?")[0]);
-  const target = path.resolve(root, url === "/" ? "edit/subtitle-editor.html" : url.slice(1));
+  const target = path.resolve(root, url === "/" ? "src/subtitle-editor.html" : url.slice(1));
 
   if (!target.startsWith(path.resolve(root))) {
     res.writeHead(403);
@@ -61,5 +61,5 @@ http.createServer((req, res) => {
     fs.createReadStream(target).pipe(res);
   });
 }).listen(port, "127.0.0.1", () => {
-  console.log(`Subtitle editor: http://127.0.0.1:${port}/edit/subtitle-editor.html`);
+  console.log(`Subtitle editor: http://127.0.0.1:${port}/src/subtitle-editor.html`);
 });

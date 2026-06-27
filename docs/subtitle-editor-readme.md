@@ -3,7 +3,7 @@
 Open the editor at:
 
 ```text
-http://127.0.0.1:8787/edit/subtitle-editor.html
+http://127.0.0.1:8787/src/subtitle-editor.html
 ```
 
 Default assets:
@@ -15,6 +15,18 @@ Start the local server:
 
 ```powershell
 npm run start
+```
+
+Start the local server and open the editor automatically:
+
+```powershell
+npm run open
+```
+
+On Windows, you can also double-click:
+
+```text
+start-subtitle-editor.cmd
 ```
 
 Use the page to:

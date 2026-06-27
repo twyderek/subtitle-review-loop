@@ -13,6 +13,7 @@ delivery.
 - SRT cue editing, search, and jump-to-cue playback controls
 - Rule-based subtitle cleanup script
 - Local server with MP4 range request support
+- One-click Windows launcher that starts the local server and opens the editor
 - Human-in-the-loop subtitle correction workflow
 - Reusable video subtitle workflow documentation
 - Copyable project prompt for Codex or ChatGPT
@@ -94,13 +95,19 @@ Install dependencies:
 npm install
 ```
 
-Start the local subtitle editor server:
+Start the local subtitle editor and open it automatically:
+
+```bash
+npm run open
+```
+
+Or start only the local subtitle editor server:
 
 ```bash
 npm run start
 ```
 
-Open:
+Then open:
 
 ```text
 http://127.0.0.1:8787/src/subtitle-editor.html
@@ -114,6 +121,33 @@ workspace/media.rule-cleaned.srt
 ```
 
 You can also open the HTML page and manually choose a video and SRT file.
+
+## One-Click Windows Launcher
+
+Windows users can double-click this file from the project folder:
+
+```text
+start-subtitle-editor.cmd
+```
+
+The launcher will:
+
+1. Check whether `node` is available.
+2. Start the local subtitle editor server.
+3. Open the browser automatically.
+4. Keep the server running while the command window stays open.
+
+If Node.js is not installed, the launcher prints a suggested install command:
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+For macOS or Linux, use:
+
+```bash
+npm run open
+```
 
 ## Example: Generate A Draft SRT
 
@@ -250,14 +284,20 @@ git clone https://github.com/twyderek/subtitle-review-loop.git
 cd subtitle-review-loop
 ```
 
-安裝並啟動：
+安裝並自動開啟字幕編輯器：
 
 ```bash
 npm install
+npm run open
+```
+
+也可以只啟動本機服務，再手動開啟字幕編輯器：
+
+```bash
 npm run start
 ```
 
-開啟字幕編輯器：
+手動開啟網址：
 
 ```text
 http://127.0.0.1:8787/src/subtitle-editor.html
@@ -299,6 +339,17 @@ whisper workspace/media.mp4 --language Chinese --task transcribe --output_format
 - 搜尋字幕文字
 - 修改錯字、斷句與專有名詞
 - 匯出修正後的 SRT
+
+### Windows 雙擊啟動
+
+Windows 使用者可以直接在專案資料夾中雙擊：
+
+```text
+start-subtitle-editor.cmd
+```
+
+它會自動檢查 `node`、啟動本機服務，並開啟字幕編輯器網頁。使用期間請保留
+命令視窗開啟；關閉視窗後，本機字幕服務也會停止。
 
 ### 檔案安全提醒
 

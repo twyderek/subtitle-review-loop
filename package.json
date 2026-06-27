@@ -6,6 +6,7 @@
   "description": "Human-in-the-loop subtitle review workflow and browser editor.",
   "scripts": {
     "start": "node src/subtitle-editor-server.mjs",
+    "open": "node scripts/start-editor.mjs",
     "clean:subtitles": "node src/apply_subtitle_rules.mjs"
   },
   "engines": {
