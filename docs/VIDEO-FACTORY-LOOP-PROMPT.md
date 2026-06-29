@@ -65,14 +65,22 @@ Required workflow:
      outputs so the review is reproducible.
 
 6. Produce a browser subtitle editor.
-   - Create a local HTML page that lets me watch the video and edit subtitle
-     cues side by side.
-   - Include jump-to-cue, search, apply-rules, download SRT, and save SRT.
+   - Create a two-stage local HTML page.
+   - Stage 1: watch the video and edit subtitle cues side by side.
+   - Stage 1 must include jump-to-cue, search, apply-rules, download SRT, and
+     save SRT.
+   - Stage 2: preview burned subtitles over the video.
+   - Stage 2 must allow font family, font size, text color, outline color,
+     outline width, subtitle position, vertical margin, and bold settings.
+   - Save the reviewed SRT and burn settings to a fixed review-output folder:
+     media.edited.srt, burn-settings.json, burn-settings.ffmpeg-style.txt, and
+     export-manifest.json.
    - Provide a small local server so video playback supports seeking.
 
 7. Final export.
    - After review, produce a final editable SRT.
    - If requested, burn subtitles into a new MP4 using ffmpeg.
+   - Use the saved burn-settings.json when burning subtitles.
    - Apply subtitles last in the filter chain.
    - Preserve audio unless audio editing is requested.
    - Before burning the full video, render a 10-20 second sample and extract a

@@ -78,7 +78,7 @@ to watch.
 Always render a 20-second sample before a full burn:
 
 ```powershell
-npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled_sample_20s.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 Manual FFmpeg equivalent for debugging:
@@ -101,7 +101,7 @@ Then inspect a screenshot before rendering the full video.
 Use the project script so subtitle style stays consistent:
 
 ```powershell
-npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+npm run burn:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 The script applies the safe teaching-video style and handles Windows path

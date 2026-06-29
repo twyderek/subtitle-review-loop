@@ -169,17 +169,27 @@ node src/apply_subtitle_rules.mjs input.srt output.srt report.md
 
 ## Burn Subtitles With FFmpeg
 
-After the browser review is complete, render a short sample first:
+After the browser review is complete, click `儲存校稿包` in the editor. The
+editor writes the reviewed subtitle and burn settings to `workspace/review-output/`.
+
+The review package contains:
+
+- `media.edited.srt`
+- `burn-settings.json`
+- `burn-settings.ffmpeg-style.txt`
+- `export-manifest.json`
+
+Render a short sample first:
 
 ```bash
-npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled_sample_20s.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 Only burn the full video after the sample screenshot confirms the subtitles do
 not block important UI content:
 
 ```bash
-npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+npm run burn:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 The script uses a safe default style for screen-recorded teaching videos:
@@ -203,11 +213,12 @@ ffmpeg -y -ss 00:00:10 -t 20 -i workspace/media.mp4 -vf "subtitles='workspace/me
 3. Ask the user for glossary, spelling references, and a rule file.
 4. Apply only the user-provided subtitle cleanup rules.
 5. Produce correction report and terminology table.
-6. Review the subtitles in the browser editor while watching the video.
-7. Export the corrected SRT.
-8. Render a short burned-subtitle sample and screenshot.
-9. Burn the final MP4 only after the sample is approved.
-10. Verify duration, resolution, audio, subtitle readability, and output files.
+6. Review the subtitles in browser editor stage 1.
+7. Configure burn-in style in browser editor stage 2.
+8. Save the review package to `workspace/review-output/`.
+9. Render a short burned-subtitle sample and screenshot.
+10. Burn the final MP4 only after the sample is approved.
+11. Verify duration, resolution, audio, subtitle readability, and output files.
 
 ## Important Principle
 
@@ -300,10 +311,19 @@ workspace/media.rule-cleaned.srt
 啟動伺服器後，使用者可以在瀏覽器中：
 
 - 載入影片與 SRT
-- 點選字幕跳到對應時間
+- 第一階段點選字幕跳到對應時間並校稿
 - 搜尋字幕文字
 - 修改錯字、斷句與專有名詞
-- 匯出修正後的 SRT
+- 第二階段設定燒錄字幕的字型、大小、位置、顏色與外框
+- 即時預覽字幕在影片上的顯示效果
+- 儲存校稿包到 `workspace/review-output/`
+
+校稿包會包含：
+
+- `media.edited.srt`：修正後字幕檔
+- `burn-settings.json`：燒錄字幕設定
+- `burn-settings.ffmpeg-style.txt`：FFmpeg `force_style` 參考
+- `export-manifest.json`：輸出摘要
 
 ### 燒字幕安全預設
 
@@ -317,13 +337,13 @@ workspace/media.rule-cleaned.srt
 或直接使用：
 
 ```bash
-npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled_sample_20s.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 確認短樣片沒有遮住畫面重點後，再輸出完整影片：
 
 ```bash
-npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+npm run burn:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 ### 檔案安全提醒

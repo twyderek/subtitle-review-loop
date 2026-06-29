@@ -121,7 +121,7 @@ Open:
 http://127.0.0.1:8787/src/subtitle-editor.html
 ```
 
-Use the editor to:
+Use stage 1 of the editor to:
 
 - watch the video beside the subtitle list
 - jump to cue times
@@ -129,6 +129,19 @@ Use the editor to:
 - search subtitle text
 - apply subtitle rules
 - download or save the revised SRT
+
+Use stage 2 of the editor to:
+
+- preview burned subtitles directly over the video
+- configure font family, font size, color, outline, position, and vertical margin
+- save the reviewed subtitle and burn settings to `workspace/review-output/`
+
+The review package contains:
+
+- `workspace/review-output/media.edited.srt`
+- `workspace/review-output/burn-settings.json`
+- `workspace/review-output/burn-settings.ffmpeg-style.txt`
+- `workspace/review-output/export-manifest.json`
 
 ## Stage 6 - Final Output
 
@@ -145,13 +158,13 @@ This prevents oversized subtitles from covering screen-recorded teaching UI.
 Preferred sample command:
 
 ```powershell
-npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled_sample_20s.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 Preferred final command after the sample is approved:
 
 ```powershell
-npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+npm run burn:subtitles -- workspace/media.mp4 workspace/review-output/media.edited.srt workspace/review-output/media_subtitled.mp4 --settings workspace/review-output/burn-settings.json
 ```
 
 Manual sample command for debugging:
