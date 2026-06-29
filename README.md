@@ -230,6 +230,8 @@ overlap detection, cue length warnings, and encoding checks.
 ## Documentation
 
 - [Complete Workflow](docs/VIDEO-SUBTITLE-WORKFLOW.md)
+- [Project Documentation - Traditional Chinese](docs/PROJECT-DOCUMENTATION-ZH.md)
+- [Workflow Diagram - Excalidraw](docs/subtitle-review-loop-workflow.excalidraw)
 - [Reusable Loop Prompt](docs/VIDEO-FACTORY-LOOP-PROMPT.md)
 - [Runbook: Issues And Fixes](docs/RUNBOOK-ISSUES-AND-FIXES.md)
 - [Editor Notes](docs/subtitle-editor-readme.md)
