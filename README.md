@@ -231,6 +231,8 @@ overlap detection, cue length warnings, and encoding checks.
 
 - [Complete Workflow](docs/VIDEO-SUBTITLE-WORKFLOW.md)
 - [Project Documentation - Traditional Chinese](docs/PROJECT-DOCUMENTATION-ZH.md)
+- [Technical Document - DOCX](docs/PROJECT-TECHNICAL-DOCUMENT-ZH.docx)
+- [Technical Document - Markdown](docs/PROJECT-TECHNICAL-DOCUMENT-ZH.md)
 - [Workflow Diagram - Excalidraw](docs/subtitle-review-loop-workflow.excalidraw)
 - [Reusable Loop Prompt](docs/VIDEO-FACTORY-LOOP-PROMPT.md)
 - [Runbook: Issues And Fixes](docs/RUNBOOK-ISSUES-AND-FIXES.md)
