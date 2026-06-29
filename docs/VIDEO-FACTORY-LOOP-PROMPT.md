@@ -41,6 +41,10 @@ Required workflow:
      to the same video by hash, duration, or package context.
    - If no trusted subtitle exists, use available ASR tooling.
    - Save the original editable subtitle as media.srt or draft-subtitles.srt.
+   - On Windows, force UTF-8 output for ASR tools when needed:
+     PYTHONIOENCODING=utf-8 and PYTHONUTF8=1.
+   - Do not treat PowerShell mojibake display as proof that the subtitle file
+     is corrupted; verify encoding with Python or another UTF-8-aware reader.
 
 4. Generate a correction review before final export.
    - Produce correction-review.md and correction-review.json.
@@ -71,6 +75,10 @@ Required workflow:
    - If requested, burn subtitles into a new MP4 using ffmpeg.
    - Apply subtitles last in the filter chain.
    - Preserve audio unless audio editing is requested.
+   - Before burning the full video, render a 10-20 second sample and extract a
+     screenshot to confirm subtitle size and position.
+   - For screen-recorded teaching videos, prefer a small bottom subtitle style:
+     FontSize=14, Outline=1, Alignment=2, MarginV=22.
 
 8. Verification.
    - Verify subtitle cue count and timecode format.
@@ -102,6 +110,7 @@ edit/
   media.rule-cleaned-report.md
   rule.txt
   media_subtitled.mp4
+  media_subtitled_sample_20s.mp4
   verify_frame_10s.jpg
   subtitle-editor.html
   subtitle-editor-server.mjs

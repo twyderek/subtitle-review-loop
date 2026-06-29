@@ -41,6 +41,17 @@ Preferred order:
 
 Never silently mix subtitles from a different video.
 
+On Windows, protect Whisper transcription from console encoding failures:
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
+whisper workspace/media.mp4 --model small --language Chinese --task transcribe --output_format all --output_dir workspace --verbose False
+```
+
+If Chinese text appears as mojibake in PowerShell, verify the file with Python
+before assuming the subtitle is corrupted.
+
 ## Stage 3 - Generate Correction Review
 
 Before final export, create review artifacts:
@@ -128,11 +139,25 @@ After review is complete, produce either:
 - both SRT and burned-subtitle MP4
 
 For burned subtitles, apply subtitles last in the ffmpeg filter chain.
+Always render a short sample clip and screenshot before burning the full video.
+This prevents oversized subtitles from covering screen-recorded teaching UI.
 
-Example command:
+Preferred sample command:
 
 ```powershell
-ffmpeg -y -i workspace/media.mp4 -vf "subtitles='workspace/media.rule-cleaned.srt':force_style='FontName=Microsoft JhengHei,FontSize=24,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=55'" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a copy -movflags +faststart workspace/media_subtitled.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+```
+
+Preferred final command after the sample is approved:
+
+```powershell
+npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+```
+
+Manual sample command for debugging:
+
+```powershell
+ffmpeg -y -ss 00:00:10 -t 20 -i workspace/media.mp4 -vf "subtitles='workspace/media.rule-cleaned.srt':charenc=UTF-8:force_style='FontName=Microsoft JhengHei,FontSize=14,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=0,Alignment=2,MarginV=22'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart workspace/media_subtitled_sample_20s.mp4
 ```
 
 ## Verification Checklist
@@ -147,6 +172,8 @@ Before delivery, verify:
 - video duration matches source
 - video resolution and audio stream are intact
 - screenshot sample shows readable subtitles
+- subtitle sample does not cover important UI content
+- Windows/PowerShell display encoding has not been mistaken for file corruption
 
 Current verified outputs:
 

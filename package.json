@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node src/subtitle-editor-server.mjs",
     "open": "node scripts/start-editor.mjs",
+    "sample:subtitles": "node scripts/burn-subtitles.mjs --sample",
+    "burn:subtitles": "node scripts/burn-subtitles.mjs",
     "clean:subtitles": "node src/apply_subtitle_rules.mjs"
   },
   "engines": {

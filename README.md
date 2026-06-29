@@ -12,11 +12,11 @@ delivery.
 - Browser subtitle editor with video preview
 - SRT cue editing, search, and jump-to-cue playback controls
 - Rule-based subtitle cleanup script
+- Safe FFmpeg burn-in subtitle script for teaching videos
 - Local server with MP4 range request support
 - One-click Windows launcher that starts the local server and opens the editor
 - Human-in-the-loop subtitle correction workflow
-- Reusable video subtitle workflow documentation
-- Copyable project prompt for Codex or ChatGPT
+- Reusable workflow and prompt documentation
 
 ## What This Repository Does Not Include
 
@@ -28,16 +28,11 @@ files in a local `workspace/` folder.
 
 ### Required Tools
 
-Install these before running the project:
-
 - Node.js 20 or later
 - Git
 - A modern browser, such as Chrome, Edge, Firefox, or Safari
 
 ### Optional Tools
-
-Install these when you want automatic transcription or burned-in subtitle video
-exports:
 
 - FFmpeg, for extracting audio, checking media files, and burning subtitles
 - Python 3.10 or later, if you want to run local Whisper transcription
@@ -45,25 +40,16 @@ exports:
 
 ### Windows Installation Examples
 
-Using `winget`:
-
 ```powershell
 winget install OpenJS.NodeJS.LTS
 winget install Git.Git
 winget install Gyan.FFmpeg
 winget install Python.Python.3.12
-```
-
-Optional local Whisper install:
-
-```powershell
 python -m pip install --upgrade pip
 python -m pip install -U openai-whisper
 ```
 
 ### macOS Installation Examples
-
-Using Homebrew:
 
 ```bash
 brew install node git ffmpeg python
@@ -71,8 +57,6 @@ python3 -m pip install -U openai-whisper
 ```
 
 ### Linux Installation Examples
-
-Using Ubuntu or Debian:
 
 ```bash
 sudo apt update
@@ -130,26 +114,11 @@ Windows users can double-click this file from the project folder:
 start-subtitle-editor.cmd
 ```
 
-The launcher will:
+The launcher checks whether `node` is available, starts the local subtitle
+editor server, opens the browser automatically, and keeps the server running
+while the command window stays open.
 
-1. Check whether `node` is available.
-2. Start the local subtitle editor server.
-3. Open the browser automatically.
-4. Keep the server running while the command window stays open.
-
-If Node.js is not installed, the launcher prints a suggested install command:
-
-```powershell
-winget install OpenJS.NodeJS.LTS
-```
-
-For macOS or Linux, use:
-
-```bash
-npm run open
-```
-
-## Example: Generate A Draft SRT
+## Generate A Draft SRT
 
 If you use local Whisper, put your video in `workspace/media.mp4`, then run:
 
@@ -157,19 +126,21 @@ If you use local Whisper, put your video in `workspace/media.mp4`, then run:
 whisper workspace/media.mp4 --language Chinese --task transcribe --output_format srt --output_dir workspace
 ```
 
-Rename or copy the generated SRT to the editor's default filename if needed:
+On Windows, use UTF-8 environment variables to avoid `cp950` console crashes:
 
-```bash
-cp workspace/media.srt workspace/media.rule-cleaned.srt
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
+whisper workspace/media.mp4 --model small --language Chinese --task transcribe --output_format all --output_dir workspace --verbose False
 ```
 
-On Windows PowerShell:
+Rename or copy the generated SRT to the editor's default filename if needed:
 
 ```powershell
 Copy-Item workspace\media.srt workspace\media.rule-cleaned.srt
 ```
 
-## Example: Apply Subtitle Rules
+## Apply Subtitle Rules
 
 Prepare your editable SRT:
 
@@ -196,12 +167,33 @@ You can also pass custom paths:
 node src/apply_subtitle_rules.mjs input.srt output.srt report.md
 ```
 
-## Example: Burn Subtitles With FFmpeg
+## Burn Subtitles With FFmpeg
 
-After confirming the corrected SRT, you can generate a burned-in subtitle video:
+After the browser review is complete, render a short sample first:
 
 ```bash
-ffmpeg -y -i workspace/media.mp4 -vf "subtitles='workspace/media.rule-cleaned.srt':force_style='FontName=Microsoft JhengHei,FontSize=24,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=55'" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a copy -movflags +faststart workspace/media_subtitled.mp4
+npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+```
+
+Only burn the full video after the sample screenshot confirms the subtitles do
+not block important UI content:
+
+```bash
+npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+```
+
+The script uses a safe default style for screen-recorded teaching videos:
+
+- bottom aligned
+- small subtitle size
+- thin black outline
+- UTF-8 subtitle decoding
+- Windows path escaping for FFmpeg
+
+For manual FFmpeg debugging, the equivalent sample command is:
+
+```bash
+ffmpeg -y -ss 00:00:10 -t 20 -i workspace/media.mp4 -vf "subtitles='workspace/media.rule-cleaned.srt':charenc=UTF-8:force_style='FontName=Microsoft JhengHei,FontSize=14,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=0,Alignment=2,MarginV=22'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart workspace/media_subtitled_sample_20s.mp4
 ```
 
 ## Recommended Workflow
@@ -210,10 +202,12 @@ ffmpeg -y -i workspace/media.mp4 -vf "subtitles='workspace/media.rule-cleaned.sr
 2. Generate or provide a draft SRT.
 3. Ask the user for glossary, spelling references, and a rule file.
 4. Apply only the user-provided subtitle cleanup rules.
-5. Review the subtitles in the browser editor while watching the video.
-6. Export the corrected SRT.
-7. Optionally burn the final subtitles into a new MP4 with FFmpeg.
-8. Verify subtitle timing, wording, terminology, and video output.
+5. Produce correction report and terminology table.
+6. Review the subtitles in the browser editor while watching the video.
+7. Export the corrected SRT.
+8. Render a short burned-subtitle sample and screenshot.
+9. Burn the final MP4 only after the sample is approved.
+10. Verify duration, resolution, audio, subtitle readability, and output files.
 
 ## Important Principle
 
@@ -226,15 +220,16 @@ overlap detection, cue length warnings, and encoding checks.
 
 - [Complete Workflow](docs/VIDEO-SUBTITLE-WORKFLOW.md)
 - [Reusable Loop Prompt](docs/VIDEO-FACTORY-LOOP-PROMPT.md)
+- [Runbook: Issues And Fixes](docs/RUNBOOK-ISSUES-AND-FIXES.md)
 - [Editor Notes](docs/subtitle-editor-readme.md)
 
-## Traditional Chinese Guide
+## 繁體中文使用說明
 
 ### 專案用途
 
-`Subtitle Review Loop` 是一套在Codex中專門提供給影片使用的
-字幕工作流程。它的核心目標是：先自動產生草稿字幕，再讓使用者一邊看影片
-一邊修正錯字、專有名詞與斷句，最後輸出可編輯字幕檔或燒字幕影片。
+`Subtitle Review Loop for Codex` 是一套給教學影片、課程錄影、螢幕錄製
+教材使用的字幕製作流程。核心目標是：先自動產生草稿字幕，再讓使用者一邊
+看影片一邊修正錯字、專有名詞與斷句，最後輸出可編輯字幕檔或燒字幕影片。
 
 ### 第一次使用需要安裝
 
@@ -242,38 +237,13 @@ overlap detection, cue length warnings, and encoding checks.
 
 - `Node.js 20+`：啟動本機字幕編輯器
 - `Git`：下載與更新專案
-- 瀏覽器：開啟線上字幕編輯頁面
+- 瀏覽器：開啟字幕編輯頁面
 
 選用工具：
 
 - `FFmpeg`：燒字幕、轉檔、檢查影片資訊
 - `Python 3.10+`：安裝本機語音辨識工具時使用
 - `Whisper` 或其他 ASR 工具：自動轉錄影片並產生 SRT
-
-Windows 可參考：
-
-```powershell
-winget install OpenJS.NodeJS.LTS
-winget install Git.Git
-winget install Gyan.FFmpeg
-winget install Python.Python.3.12
-python -m pip install -U openai-whisper
-```
-
-macOS 可參考：
-
-```bash
-brew install node git ffmpeg python
-python3 -m pip install -U openai-whisper
-```
-
-Ubuntu/Debian 可參考：
-
-```bash
-sudo apt update
-sudo apt install -y nodejs npm git ffmpeg python3 python3-pip
-python3 -m pip install -U openai-whisper
-```
 
 ### 使用步驟
 
@@ -291,12 +261,6 @@ npm install
 npm run open
 ```
 
-也可以只啟動本機服務，再手動開啟字幕編輯器：
-
-```bash
-npm run start
-```
-
 手動開啟網址：
 
 ```text
@@ -310,13 +274,7 @@ workspace/media.mp4
 workspace/media.rule-cleaned.srt
 ```
 
-如果還沒有字幕，可以先用 Whisper 產生草稿：
-
-```bash
-whisper workspace/media.mp4 --language Chinese --task transcribe --output_format srt --output_dir workspace
-```
-
-### 建議的兩階段字幕流程
+### 兩階段字幕流程
 
 第一階段：收到影片時
 
@@ -328,7 +286,14 @@ whisper workspace/media.mp4 --language Chinese --task transcribe --output_format
 
 - 先產生可檢查的字幕修正版與修正報告
 - 讓使用者確認錯字、專有名詞與斷句
+- 先輸出短樣片確認字幕大小與位置
 - 確認無誤後，再輸出正式 SRT 或燒字幕 MP4
+
+### Windows 注意事項
+
+- PowerShell 可能把正確的 UTF-8 繁中文字顯示成亂碼，請用 Python 驗證檔案內容。
+- Whisper 在 Windows 可能因 `cp950` 輸出錯誤中斷，請設定 `PYTHONIOENCODING=utf-8` 與 `PYTHONUTF8=1`。
+- 不建議在 PowerShell 使用 Bash heredoc，例如 `python - <<'PY'`；請改成把 Python 腳本寫成 `.py` 檔再執行。
 
 ### 本機字幕編輯器
 
@@ -340,16 +305,26 @@ whisper workspace/media.mp4 --language Chinese --task transcribe --output_format
 - 修改錯字、斷句與專有名詞
 - 匯出修正後的 SRT
 
-### Windows 雙擊啟動
+### 燒字幕安全預設
 
-Windows 使用者可以直接在專案資料夾中雙擊：
+教學平台錄影通常畫面資訊很多，字幕不應遮擋主要 UI。建議使用：
 
-```text
-start-subtitle-editor.cmd
+- `FontSize=14`
+- `Outline=1`
+- `Alignment=2`
+- `MarginV=22`
+
+或直接使用：
+
+```bash
+npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
 ```
 
-它會自動檢查 `node`、啟動本機服務，並開啟字幕編輯器網頁。使用期間請保留
-命令視窗開啟；關閉視窗後，本機字幕服務也會停止。
+確認短樣片沒有遮住畫面重點後，再輸出完整影片：
+
+```bash
+npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+```
 
 ### 檔案安全提醒
 

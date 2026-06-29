@@ -39,3 +39,23 @@ Use the page to:
 
 Chrome and Edge support direct saving through `Save SRT`. Other browsers can
 use `Download SRT`.
+
+After saving the reviewed SRT, render a short subtitle sample before creating
+the full burned-subtitle video:
+
+```powershell
+npm run sample:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled_sample_20s.mp4
+```
+
+Only burn the full video after the sample confirms the subtitles are readable
+and do not cover important UI content:
+
+```powershell
+npm run burn:subtitles -- workspace/media.mp4 workspace/media.rule-cleaned.srt workspace/media_subtitled.mp4
+```
+
+Troubleshooting notes are collected in:
+
+```text
+docs/RUNBOOK-ISSUES-AND-FIXES.md
+```
