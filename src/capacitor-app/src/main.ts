@@ -20,7 +20,7 @@ async function bootstrap() {
     await initializeServices(nativeBridge);
 
     // 建立應用狀態
-    appState = createAppState(nativeBridge);
+    appState = createAppState();
 
     // 掛載 UI
     renderApp(appState);

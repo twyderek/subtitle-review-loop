@@ -37,6 +37,6 @@ export default defineConfig({
   },
   esbuild: {
     pure: ['console.debug'],
-    drop: process.env.NODE_ENV === 'production' ? ['console.log', 'console.info'] : [],
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
 });

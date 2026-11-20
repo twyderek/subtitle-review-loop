@@ -1,9 +1,8 @@
 // 原生橋接 - Capacitor 插件介面
 import { Capacitor, Plugins, PluginListenerHandle } from '@capacitor/core';
-import { APP_CONFIG, validateVideoDuration, validateFileSize } from './core/config.js';
-import { SrtCue } from './core/srt-parser.js';
+import { APP_CONFIG, validateVideoDuration } from './core/config.js';
 import { BurnSettings } from './core/burn-settings.js';
-import { SubtitleProject, ExportManifest } from './core/project-schema.js';
+import { SubtitleProject } from './core/project-schema.js';
 
 const {
   Whisper,
@@ -68,14 +67,14 @@ export class NativeBridge {
     console.log(`[NativeBridge] Initializing on ${this.platform}`);
 
     // 註冊 App 狀態監聽
-    const appStateListener = await App.addListener('appStateChange', (state) => {
+    const appStateListener = await App.addListener('appStateChange', (state: { isActive: boolean }) => {
       this.handleAppStateChange(state);
     });
     this.listeners.push(appStateListener);
 
     // 註冊網路狀態監聽
     try {
-      const networkListener = await Network.addListener('networkStatusChange', (status) => {
+      const networkListener = await Network.addListener('networkStatusChange', (status: { connected: boolean; connectionType: string }) => {
         this.handleNetworkChange(status);
       });
       this.listeners.push(networkListener);
@@ -338,9 +337,9 @@ export class NativeBridge {
   /** 列出所有專案 */
   async listProjects(): Promise<{ key: string; project: SubtitleProject }[]> {
     const keys = await Preferences.keys();
-    const projectKeys = keys.filter(k => k.startsWith('project_'));
+    const projectKeys = keys.filter((k: string) => k.startsWith('project_'));
     const projects = await Promise.all(
-      projectKeys.map(async (key) => {
+      projectKeys.map(async (key: string) => {
         const project = await this.loadProject(key);
         return project ? { key, project } : null;
       })

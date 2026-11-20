@@ -32,7 +32,7 @@ export const APP_CONFIG = Object.freeze({
       authHeader: 'Authorization',
       authPrefix: 'Bearer ',
       capabilities: { jsonSchema: true, streaming: true, vision: true },
-      defaultModels: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+      defaultModels: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] as string[],
     },
     gemini: {
       id: 'gemini',
@@ -43,7 +43,7 @@ export const APP_CONFIG = Object.freeze({
       authHeader: 'x-goog-api-key',
       authPrefix: '',
       capabilities: { jsonSchema: false, streaming: true, vision: true },
-      defaultModels: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
+      defaultModels: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'] as string[],
     },
     nvidia: {
       id: 'nvidia',
@@ -54,10 +54,10 @@ export const APP_CONFIG = Object.freeze({
       authHeader: 'Authorization',
       authPrefix: 'Bearer ',
       capabilities: { jsonSchema: true, streaming: true, vision: false },
-      defaultModels: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct', 'nvidia/nemotron-3-ultra'],
+      defaultModels: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct', 'nvidia/nemotron-3-ultra'] as string[],
       customBaseUrl: true,
     },
-  } as const,
+  },
 
   // 燒錄預設值
   DEFAULT_BURN_SETTINGS: {
@@ -114,25 +114,12 @@ export interface ProviderConfig {
   customBaseUrl?: boolean;
 }
 
-export interface BurnSettings {
-  fontFamily: string;
-  fontSize: number;
-  fontColor: string;
-  outlineColor: string;
-  outlineWidth: number;
-  position: VideoPosition;
-  marginV: number;
-  bold: boolean;
-  alignment: number;
-}
-
-export interface VideoInfo {
-  duration: number;
-  width: number;
-  height: number;
-  codec: string;
-  bitrate: number;
-  format: string;
+// Add index signature for PROVIDER_CONFIG
+export interface ProviderConfigMap {
+  [key: string]: ProviderConfig;
+  openai: ProviderConfig;
+  gemini: ProviderConfig;
+  nvidia: ProviderConfig;
 }
 
 export interface ValidationResult {

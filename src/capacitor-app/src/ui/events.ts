@@ -1,15 +1,15 @@
 // UI 事件處理模組
-import { AppState, Stage, ToastMessage, ModalConfig } from '../state.js';
-import { NativeBridge, TranscriptionResult, VideoInfo, FilePickerResult } from '../native-bridge.js';
+import { AppState, Stage } from '../state.js';
+import { NativeBridge, FilePickerResult } from '../native-bridge.js';
 import { APP_CONFIG, validateVideoFile, validateSubtitleFile } from '../core/config.js';
-import { SrtCue, cleanSubtitleText, hasRuleWarning, parseSrt, buildSrt, formatSrtTime } from '../core/srt-parser.js';
-import { BurnSettings, normalizeBurnSettings, buildFfmpegStyle } from '../core/burn-settings.js';
+import { SrtCue, parseSrt, buildSrt, formatSrtTime, cleanSubtitleText, hasRuleWarning } from '../core/srt-parser.js';
+import { BurnSettings, buildFfmpegStyle } from '../core/burn-settings.js';
 import { SubtitleProject, createEmptyProject, RecentProject } from '../core/project-schema.js';
 import {
   updateCueList, updateStats, updateActiveCueDisplay, updateBurnPreview,
   showToast, removeToast, showModal, hideModal, showLoading, hideLoading,
   setStatusText, updateClock, setVideoLoaded, updateProviderSelection,
-  updateAiFields
+  updateAiFields, renderApp
 } from './render.js';
 import { StateActions } from '../state.js';
 import { ProjectService, FileService, TranscriptionService, FFmpegService, AIService, HapticsService, ShareService } from '../services/index.js';
@@ -45,8 +45,9 @@ export function setupEventListeners(state: AppState, bridge: NativeBridge): void
   setupKeyboardShortcuts(state);
 
   // App 狀態變化
-  window.addEventListener('app-state-change', (e: CustomEvent) => {
-    if (!e.detail.isActive) {
+  window.addEventListener('app-state-change', (e: Event) => {
+    const ce = e as CustomEvent;
+    if (!ce.detail.isActive) {
       // App 進入背景，儲存專案
       if (state.project) {
         saveCurrentProject(state).catch(console.error);
@@ -55,14 +56,16 @@ export function setupEventListeners(state: AppState, bridge: NativeBridge): void
   });
 
   // API Keys 載入完成
-  window.addEventListener('api-keys-loaded', (e: CustomEvent) => {
-    StateActions.setApiKeys(state, e.detail);
+  window.addEventListener('api-keys-loaded', (e: Event) => {
+    const ce = e as CustomEvent;
+    StateActions.setApiKeys(state, ce.detail);
     updateAiFields(state);
   });
 
   // 最近專案載入完成
-  window.addEventListener('recent-projects-loaded', (e: CustomEvent) => {
-    StateActions.setRecentProjects(state, e.detail);
+  window.addEventListener('recent-projects-loaded', (e: Event) => {
+    const ce = e as CustomEvent;
+    StateActions.setRecentProjects(state, ce.detail);
   });
 
   console.log('[Events] Event listeners setup complete');
@@ -426,7 +429,7 @@ function setupKeyboardShortcuts(state: AppState): void {
 
 async function handleCueListClick(e: MouseEvent, state: AppState): Promise<void> {
   const target = e.target as HTMLElement;
-  const cueEl = target.closest('.cue');
+  const cueEl = target.closest('.cue') as HTMLElement;
   if (!cueEl) return;
 
   const index = Number(cueEl.dataset.index);
@@ -472,7 +475,7 @@ function handleCueDurationChange(e: Event, state: AppState): void {
   const target = e.target as HTMLInputElement;
   if (!target.classList.contains('duration-input')) return;
 
-  const cueEl = target.closest('.cue');
+  const cueEl = target.closest('.cue') as HTMLElement;
   if (!cueEl) return;
 
   const index = Number(cueEl.dataset.index);
@@ -509,10 +512,10 @@ function setCueDurationSafe(state: AppState, index: number, duration: number): b
   cue.end = cue.start + clampedDuration;
   cue.startRaw = formatSrtTime(cue.start);
   cue.endRaw = formatSrtTime(cue.end);
-  StateActions.changedCueIndices.add(index);
+  state.changedCueIndices.add(index);
 
   if (state.project) {
-    state.project.review.changedCueIndices = [...StateActions.changedCueIndices];
+    state.project.review.changedCueIndices = [...state.changedCueIndices];
   }
 
   return true;
@@ -655,6 +658,10 @@ async function handleBurnFull(state: AppState): Promise<void> {
 
       await FileService.writeText(subtitlePath, buildSrt(state.cues));
 
+      if (!state.videoUri) {
+        throw new Error('影片 URI 不存在');
+      }
+
       const result = await FFmpegService.burnSubtitles({
         videoPath: state.videoUri,
         subtitlePath,
@@ -731,19 +738,19 @@ export async function handleNewProject(state: AppState): Promise<void> {
     // 驗證影片
     const validation = validateVideoFile({ size: videoResult.size, name: videoResult.name } as File);
     if (!validation.valid) {
-      StateActions.showToast(state, 'error', validation.error);
+      StateActions.showToast(state, 'error', validation.error || '影片驗證失敗');
       return;
     }
 
     // 驗證長度
-    const durationCheck = await FFmpegService.validateDuration(videoResult.uri);
+    const durationCheck = await FFmpegService.validateDuration(videoResult!.uri);
     if (!durationCheck.valid) {
-      StateActions.showToast(state, 'error', durationCheck.error);
+      StateActions.showToast(state, 'error', durationCheck.error || '影片長度驗證失敗');
       return;
     }
 
     // 複製到應用沙盒
-    const videoUri = await FileService.copyToSandbox(videoResult.uri, `video_${Date.now()}.mp4`);
+    const videoUri = await FileService.copyToSandbox(videoResult!.uri, `video_${Date.now()}.mp4`);
 
     // 詢問是否有既有字幕
     showConfirmModal(state, '載入字幕', '是否要載入既有的 SRT 字幕檔？', async () => {
@@ -751,20 +758,20 @@ export async function handleNewProject(state: AppState): Promise<void> {
       if (srtResult) {
         const srtValidation = validateSubtitleFile({ size: srtResult.size, name: srtResult.name } as File);
         if (!srtValidation.valid) {
-          StateActions.showToast(state, 'error', srtValidation.error);
+          StateActions.showToast(state, 'error', srtValidation.error || '字幕驗證失敗');
           return;
         }
         const srtText = await FileService.readText(srtResult.uri);
         const cues = parseSrt(srtText);
-        initializeProject(state, videoUri, videoResult, durationCheck.duration, cues, srtResult.name);
+        initializeProject(state, videoUri, videoResult!, durationCheck.duration, cues, srtResult.name);
       } else {
         // 無既有字幕，進行語音轉錄
-        initializeProject(state, videoUri, videoResult, durationCheck.duration, [], '');
+        initializeProject(state, videoUri, videoResult!, durationCheck.duration, [], '');
         await startTranscription(state, videoUri);
       }
     }, () => {
       // 直接進行語音轉錄
-      initializeProject(state, videoUri, videoResult, durationCheck.duration, [], '');
+      initializeProject(state, videoUri, videoResult!, durationCheck.duration, [], '');
       startTranscription(state, videoUri);
     });
 
@@ -801,8 +808,9 @@ export async function handleOpenProject(state: AppState): Promise<void> {
   // 綁定點擊事件
   setTimeout(() => {
     document.querySelectorAll('.project-item').forEach(item => {
-      item.addEventListener('click', async () => {
-        const key = item.dataset.key!;
+      const element = item as HTMLElement;
+      element.addEventListener('click', async () => {
+        const key = element.dataset.key!;
         StateActions.hideModal(state);
         await loadProject(state, key);
       });

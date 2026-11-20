@@ -1,9 +1,46 @@
 // 應用狀態管理
-import { NativeBridge, TranscriptionSegment, TranscriptionResult, VideoInfo, FilePickerResult } from './native-bridge.js';
-import { SubtitleProject, createEmptyProject, RecentProject } from './core/project-schema.js';
+import { NativeBridge } from './native-bridge.js';
+import { SubtitleProject, RecentProject } from './core/project-schema.js';
 import { SrtCue } from './core/srt-parser.js';
 import { BurnSettings } from './core/burn-settings.js';
 import { APP_CONFIG } from './core/config.js';
+
+export interface TranscriptionSegment {
+  id: number;
+  text: string;
+  start: number;
+  end: number;
+}
+
+export interface TranscriptionResult {
+  segments: TranscriptionSegment[];
+  language: string;
+  duration: number;
+}
+
+export interface VideoInfo {
+  duration: number;
+  width: number;
+  height: number;
+  codec: string;
+  bitrate: number;
+  format: string;
+}
+
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  message: string;
+  duration?: number;
+}
+
+export interface ModalConfig {
+  id: string;
+  title: string;
+  content: string | HTMLElement;
+  actions?: { label: string; action: () => void; variant?: 'primary' | 'secondary' | 'danger' }[];
+  closable?: boolean;
+}
 
 export type Stage = 'welcome' | 'proofread' | 'burn' | 'settings' | 'project-list';
 export type TranscriptionStatus = 'idle' | 'loading-model' | 'transcribing' | 'completed' | 'error';
@@ -66,7 +103,7 @@ export interface ModalConfig {
   closable?: boolean;
 }
 
-export function createAppState(nativeBridge: NativeBridge): AppState {
+export function createAppState(): AppState {
   return {
     stage: 'welcome',
     previousStage: 'welcome',

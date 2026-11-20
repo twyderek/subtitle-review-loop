@@ -1,0 +1,37 @@
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.subtitle.review',
+  appName: '字幕校對工具',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+  },
+  ios: {
+    contentInset: 'always',
+    scrollEnabled: true,
+    limitsNavBarToVisibleBounds: true,
+    backgroundColor: '#09101f',
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
+    backgroundColor: '#09101f',
+    overrideUserAgent: 'SubtitleReviewApp/1.0',
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#09101f',
+      showSpinner: false,
+    },
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
+};
+
+export default config;

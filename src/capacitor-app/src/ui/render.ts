@@ -1,10 +1,9 @@
 // UI 渲染模組
 import { AppState, Stage, ModalConfig, ToastMessage } from '../state.js';
-import { APP_CONFIG } from '../core/config.js';
+import { APP_CONFIG, ProviderConfig } from '../core/config.js';
 import { SrtCue } from '../core/srt-parser.js';
 import { formatClock, formatDuration, escapeHtml } from '../core/srt-parser.js';
-import { BurnSettings, DEFAULT_BURN_SETTINGS, FONT_FAMILIES, PRESET_POSITIONS } from '../core/burn-settings.js';
-import { NativeBridge } from '../native-bridge.js';
+import { FONT_FAMILIES, PRESET_POSITIONS } from '../core/burn-settings.js';
 
 // 渲染主 App
 export function renderApp(state: AppState): void {
@@ -254,7 +253,7 @@ function renderBurnPanel(state: AppState): string {
           <div class="field" style="margin-top: 12px;">
             <label for="aiModel">模型</label>
             <select id="aiModel" ${!state.apiKeys[state.selectedProvider] ? 'disabled' : ''}>
-              ${APP_CONFIG.PROVIDER_CONFIG[state.selectedProvider].defaultModels.map(m => `<option value="${m}">${m}</option>`).join('')}
+              ${(APP_CONFIG.PROVIDER_CONFIG as Record<string, ProviderConfig>)[state.selectedProvider]?.defaultModels?.map((m: string) => `<option value="${m}">${m}</option>`).join('') || ''}
             </select>
           </div>
           <div class="field full" style="margin-top: 8px;">
@@ -373,16 +372,16 @@ export function updateActiveCueDisplay(state: AppState): void {
 
   const cue = state.cues[state.activeCueIndex];
   if (cue) {
-    currentText?.textContent = cue.text || ' ';
-    currentMeta?.textContent = `#${cue.id} ${cue.startRaw} → ${cue.endRaw}`;
+    if (currentText) currentText.textContent = cue.text || ' ';
+    if (currentMeta) currentMeta.textContent = `#${cue.id} ${cue.startRaw} → ${cue.endRaw}`;
     const warning = hasRuleWarning(cue.text);
     if (currentRuleState) {
       currentRuleState.textContent = warning ? '⚠ 待檢查' : '✓ 已校稿';
       currentRuleState.className = warning ? 'warn' : '';
     }
   } else {
-    currentText?.textContent = '目前沒有對應字幕';
-    currentMeta?.textContent = '尚未選取字幕';
+    if (currentText) currentText.textContent = '目前沒有對應字幕';
+    if (currentMeta) currentMeta.textContent = '尚未選取字幕';
     if (currentRuleState) {
       currentRuleState.textContent = '等待播放';
       currentRuleState.className = '';
@@ -437,16 +436,17 @@ function updateCommandBox(state: AppState): void {
   const commandBox = document.getElementById('commandBox');
   if (!commandBox) return;
 
-  const { buildFfmpegStyle } = await import('../core/burn-settings.js');
-  const style = buildFfmpegStyle(state.burnSettings);
+  import('../core/burn-settings.js').then(({ buildFfmpegStyle }) => {
+    const style = buildFfmpegStyle(state.burnSettings);
 
-  commandBox.textContent = [
-    `# 產生 20 秒預覽`,
-    `ffmpeg -y -ss 10 -t 20 -i input.mp4 -vf "subtitles='input.srt':force_style='${style}'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k output_sample.mp4`,
-    ``,
-    `# 燒錄完整影片`,
-    `ffmpeg -y -i input.mp4 -vf "subtitles='input.srt':force_style='${style}'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k output.mp4`,
-  ].join('\n');
+    commandBox.textContent = [
+      `# 產生 20 秒預覽`,
+      `ffmpeg -y -ss 10 -t 20 -i input.mp4 -vf "subtitles='input.srt':force_style='${style}'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k output_sample.mp4`,
+      ``,
+      `# 燒錄完整影片`,
+      `ffmpeg -y -i input.mp4 -vf "subtitles='input.srt':force_style='${style}'" -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -c:a aac -b:a 128k output.mp4`,
+    ].join('\n');
+  });
 }
 
 // Toast 顯示
@@ -537,9 +537,9 @@ export function updateAiFields(state: AppState): void {
   const apiKeyInput = document.getElementById('aiApiKey') as HTMLInputElement;
 
   if (modelSelect) {
-    const providerConfig = APP_CONFIG.PROVIDER_CONFIG[state.selectedProvider];
+    const providerConfig = (APP_CONFIG.PROVIDER_CONFIG as Record<string, ProviderConfig>)[state.selectedProvider];
     const currentValue = modelSelect.value;
-    modelSelect.innerHTML = providerConfig.defaultModels.map(m => `<option value="${m}" ${m === currentValue ? 'selected' : ''}>${m}</option>`).join('');
+    modelSelect.innerHTML = providerConfig.defaultModels.map((m: string) => `<option value="${m}" ${m === currentValue ? 'selected' : ''}>${m}</option>`).join('');
     modelSelect.disabled = !state.apiKeys[state.selectedProvider];
   }
 

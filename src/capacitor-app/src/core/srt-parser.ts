@@ -11,6 +11,48 @@ export interface SrtCue {
   originalText: string;
 }
 
+export const FILLER_PATTERN = /(呃|啊|嗯|那個|就是|然後|這個|你知道吧|對吧)/;
+export const FILLER_PATTERN_GLOBAL = /(呃|啊|嗯|那個|就是|然後|這個|你知道吧|對吧)/g;
+
+export const DISALLOWED_PUNCTUATION_PATTERN = /[，。、：；「」『』（）()［］\[\]《》〈〉“”"']/;
+export const DISALLOWED_PUNCTUATION_PATTERN_GLOBAL = /[，。、：；「」『』（）()［］\[\]《》〈〉“”"']/g;
+
+export const TERM_RULES: [RegExp, string][] = [
+  [/Whisper\s*Desktop/gi, 'WHISPERDESKTOP'],
+  [/\bwhisper\b/gi, 'WHISPER'],
+  [/\bEverkin\b/gi, 'EVERCAM'],
+  [/\bEvercam\b/gi, 'EVERCAM'],
+  [/\bopen\s*ai\b/gi, 'OPENAI'],
+  [/\bgpt[-\s]?4\b/gi, 'GPT-4'],
+  [/\bdall[-\s]?e\b/gi, 'DALL-E'],
+  [/\btoken\b/gi, 'TOKEN'],
+  [/\bdefault\b/gi, 'DEFAULT'],
+  [/\blms\b/gi, 'LMS'],
+  [/\bmoodle\b/gi, 'MOODLE'],
+  [/\be3\b/gi, 'E3'],
+  [/\bkm\s*plus\b/gi, 'KMPLUS'],
+  [/\bai\b/gi, 'AI'],
+  [/\bapi\b/gi, 'API'],
+];
+
+export function cleanSubtitleText(value: string): string {
+  let text = value.trim();
+  for (const [pattern, replacement] of TERM_RULES) {
+    text = text.replace(pattern, replacement);
+  }
+  text = text.replace(FILLER_PATTERN_GLOBAL, '  ');
+  text = text.replace(/所以呢/g, '所以');
+  text = text.replace(DISALLOWED_PUNCTUATION_PATTERN_GLOBAL, '  ');
+  text = text.replace(/\t/g, ' ').replace(/ {3,}/g, '  ').replace(/^ +| +$/g, '');
+  return text;
+}
+
+export function hasRuleWarning(text: string): boolean {
+  return FILLER_PATTERN.test(text) ||
+    DISALLOWED_PUNCTUATION_PATTERN.test(text) ||
+    /\b(whisper|openai|api|ai|moodle|token|default|lms|evercam|kmplus)\b/i.test(text);
+}
+
 export function parseSrt(text: string): SrtCue[] {
   return text.replace(/^﻿/, '')
     .trim()
@@ -81,7 +123,8 @@ export function syncCueRaw(cue: SrtCue): void {
 export function getCueEndLimit(cues: SrtCue[], index: number, videoDuration?: number): number {
   const nextCue = cues[index + 1];
   if (nextCue) return Math.max(cues[index].start + 0.1, nextCue.start - 0.001);
-  if (Number.isFinite(videoDuration) && videoDuration > 0) return videoDuration;
+  const vd = videoDuration ?? 0;
+  if (Number.isFinite(vd) && vd > 0) return vd;
   return Infinity;
 }
 

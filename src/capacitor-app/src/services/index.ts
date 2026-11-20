@@ -1,7 +1,6 @@
 // 服務初始化
 import { NativeBridge } from '../native-bridge.js';
 import { APP_CONFIG } from '../core/config.js';
-import { getNativeBridge } from '../native-bridge.js';
 
 let nativeBridgeInstance: NativeBridge | null = null;
 
@@ -129,7 +128,8 @@ export const FileService = {
 
   async writeText(uri: string, data: string) {
     if (!nativeBridgeInstance) throw new Error('Native bridge not initialized');
-    return nativeBridgeInstance.writeFile(uri, data);
+    await nativeBridgeInstance.writeFile(uri, data);
+    return uri;
   },
 
   async readBinary(uri: string) {
