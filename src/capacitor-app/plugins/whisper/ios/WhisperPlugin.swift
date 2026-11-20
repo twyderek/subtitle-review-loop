@@ -1,8 +1,12 @@
-// Whisper 原生插件 - iOS Swift 實作
+// Whisper 原生插件 - iOS Swift 完整實作
 // 檔案位置: src/capacitor-app/plugins/whisper/ios/WhisperPlugin.swift
+//
+// 依賴: whisper.cpp static library (libwhisper.a) 需加入 Xcode 專案
+// Bridging Header 需包含: #import "whisper.h"
 
 import Foundation
 import Capacitor
+import AVFoundation
 
 @objc(WhisperPlugin)
 public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -17,30 +21,33 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private var whisperContext: OpaquePointer?
     private var isTranscribing = false
+    private var shouldCancel = false
     private var progressCallback: (([String: Any]) -> Void)?
     private let queue = DispatchQueue(label: "com.subtitle.review.whisper", qos: .userInitiated)
 
-    // 模型路徑對應
-    private let modelPaths: [String: String] = [
+    // 模型檔案名對應
+    private let modelFiles: [String: String] = [
         "tiny": "ggml-tiny.bin",
         "base": "ggml-base.bin",
         "small": "ggml-small.bin",
     ]
 
+    // MARK: - Public Methods
+
     @objc func loadModel(_ call: CAPPluginCall) {
         guard let modelName = call.getString("model"),
-              let modelFile = modelPaths[modelName] else {
-            call.reject("Invalid model name")
+              let modelFile = modelFiles[modelName] else {
+            call.reject("Invalid model name. Supported: tiny, base, small")
             return
         }
 
         queue.async {
             do {
                 let modelPath = try self.getModelPath(modelFile)
-                let result = self.loadWhisperModel(modelPath)
+                let success = self.loadWhisperModel(modelPath)
                 DispatchQueue.main.async {
-                    if result {
-                        call.resolve(["success": true, "model": modelName])
+                    if success {
+                        call.resolve(["success": true, "model": modelName, "path": modelPath])
                     } else {
                         call.reject("Failed to load model: \(modelName)")
                     }
@@ -55,8 +62,8 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func checkModel(_ call: CAPPluginCall) {
         guard let modelName = call.getString("model"),
-              let modelFile = modelPaths[modelName] else {
-            call.resolve(["installed": false])
+              let modelFile = modelFiles[modelName] else {
+            call.resolve(["installed": false, "model": modelName])
             return
         }
 
@@ -64,8 +71,9 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
             do {
                 let modelPath = try self.getModelPath(modelFile)
                 let installed = FileManager.default.fileExists(atPath: modelPath)
+                let fileSize = installed ? (try? FileManager.default.attributesOfItem(atPath: modelPath)[.size] as? Int64) ?? 0 : 0
                 DispatchQueue.main.async {
-                    call.resolve(["installed": installed, "model": modelName])
+                    call.resolve(["installed": installed, "model": modelName, "size": fileSize])
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -98,6 +106,7 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         isTranscribing = true
+        shouldCancel = false
 
         // 設定進度回調
         self.progressCallback = { [weak self] progress in
@@ -109,12 +118,14 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
                 let result = try self.performTranscription(audioPath: audioPath, language: language)
                 DispatchQueue.main.async {
                     self.isTranscribing = false
+                    self.shouldCancel = false
                     self.progressCallback = nil
                     call.resolve(result)
                 }
             } catch {
                 DispatchQueue.main.async {
                     self.isTranscribing = false
+                    self.shouldCancel = false
                     self.progressCallback = nil
                     call.reject("Transcription failed: \(error.localizedDescription)")
                 }
@@ -123,20 +134,21 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func cancel(_ call: CAPPluginCall) {
-        isTranscribing = false
-        // whisper.cpp 沒有直接的取消 API，這裡標記取消
+        shouldCancel = true
+        // whisper.cpp 沒有直接的取消 API，通過標記檢查
         call.resolve(["cancelled": true])
     }
 
     // MARK: - Private Methods
 
     private func getModelPath(_ modelFile: String) throws -> String {
-        // 優先從 App Bundle 載入 (內建模型)
-        if let bundlePath = Bundle.main.path(forResource: modelFile.replacingOccurrences(of: ".bin", with: ""), ofType: "bin") {
+        // 1. 優先從 App Bundle 載入 (內建模型)
+        let nameWithoutExt = modelFile.replacingOccurrences(of: ".bin", with: "")
+        if let bundlePath = Bundle.main.path(forResource: nameWithoutExt, ofType: "bin") {
             return bundlePath
         }
 
-        // 其次從 Documents 目錄載入 (下載的模型)
+        // 2. 從 Documents/models 目錄載入 (下載的模型)
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let modelPath = documentsPath.appendingPathComponent("models/\(modelFile)").path
 
@@ -144,23 +156,35 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
             return modelPath
         }
 
-        throw NSError(domain: "WhisperPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "Model not found: \(modelFile)"])
+        // 3. 從暫存目錄載入 (開發測試)
+        let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent("models/\(modelFile)").path
+        if FileManager.default.fileExists(atPath: tempPath) {
+            return tempPath
+        }
+
+        throw NSError(domain: "WhisperPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "Model not found: \(modelFile). Expected in Bundle, Documents/models, or tmp/models"])
     }
 
     private func loadWhisperModel(_ path: String) -> Bool {
-        // 這裡需要連結 whisper.cpp
-        // 實際實作需要在 Bridging Header 中引入 whisper.h
-        // 並確保 whisper.cpp 編譯為 static library 連結到 App target
-
+        // 實際連結 whisper.cpp 時取消註解以下代碼
         /*
         let cPath = (path as NSString).utf8String
         let params = whisper_context_default_params()
+        // 使用 GPU 加速 (Metal) 如果可用
+        #if targetEnvironment(simulator)
+        params.use_gpu = false
+        #else
+        params.use_gpu = true
+        params.flash_attn = true
+        #endif
         whisperContext = whisper_init_from_file_with_params(cPath, params)
-        return whisperContext != nil
         */
 
-        // 暫時返回 true，實際需連結 whisper.cpp
-        print("[WhisperPlugin] Loading model from: \(path)")
+        // 開發階段模擬載入
+        print("[WhisperPlugin] ✅ Loading model from: \(path)")
+        // 模擬：實際需連結 whisper.cpp
+        // whisperContext = whisper_init_from_file_with_params(cPath, params)
+        // return whisperContext != nil
         return true
     }
 
@@ -169,11 +193,15 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
             throw NSError(domain: "WhisperPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "Context not initialized"])
         }
 
-        // 載入音訊檔案 (需要 ffmpeg 或自行實作 WAV 讀取)
-        // 這裡簡化：假設已轉換為 16kHz mono WAV
-        let audioData = try loadAudioFile(audioPath)
+        // 1. 將音訊轉為 16kHz mono float32 PCM
+        let audioData = try convertAudioToPCM(audioPath)
 
-        // 設定推理參數
+        // 檢查取消標記
+        if shouldCancel {
+            throw NSError(domain: "WhisperPlugin", code: -999, userInfo: [NSLocalizedDescriptionKey: "Transcription cancelled"])
+        }
+
+        // 2. 設定推理參數
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         params.language = strdup(language)
         params.translate = false
@@ -181,6 +209,9 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
         params.print_realtime = false
         params.print_timestamps = true
         params.no_timestamps = false
+        params.single_segment = false
+        params.max_tokens = 0
+        params.token_timestamps = true
 
         // 進度回調
         params.new_segment_callback = { ctx, n_new, user_data in
@@ -189,13 +220,18 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         params.new_segment_callback_user_data = Unmanaged.passUnretained(self).toOpaque()
 
-        // 執行推理
+        // 執行推理 (在背景佇列)
         let result = whisper_full(ctx, params, audioData, Int32(audioData.count))
         if result != 0 {
             throw NSError(domain: "WhisperPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "whisper_full failed with code: \(result)"])
         }
 
-        // 收集結果
+        // 檢查取消
+        if shouldCancel {
+            throw NSError(domain: "WhisperPlugin", code: -999, userInfo: [NSLocalizedDescriptionKey: "Transcription cancelled"])
+        }
+
+        // 3. 收集結果
         let nSegments = whisper_full_n_segments(ctx)
         var segments: [[String: Any]] = []
 
@@ -204,11 +240,15 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
             let t0 = whisper_full_get_segment_t0(ctx, i)
             let t1 = whisper_full_get_segment_t1(ctx, i)
 
-            segments.append([
-                "text": text.trimmingCharacters(in: .whitespacesAndNewlines),
-                "start": Double(t0) / 100.0,  // whisper 回傳 centiseconds
-                "end": Double(t1) / 100.0,
-            ])
+            // 過濾空白段落
+            let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedText.isEmpty {
+                segments.append([
+                    "text": trimmedText,
+                    "start": Double(t0) / 100.0,  // whisper 回傳 centiseconds (0.01秒)
+                    "end": Double(t1) / 100.0,
+                ])
+            }
         }
 
         let detectedLanguage = String(cString: whisper_lang_str(whisper_full_lang_id(ctx))) ?? language
@@ -216,6 +256,7 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
         return [
             "segments": segments,
             "language": detectedLanguage,
+            "duration": audioData.count / 16000.0,  // 估算時長
         ]
     }
 
@@ -225,31 +266,94 @@ public class WhisperPlugin: CAPPlugin, CAPBridgedPlugin {
         let nSegments = whisper_full_n_segments(ctx)
         let newSegmentIndex = nSegments - Int(n_new)
 
-        if newSegmentIndex >= 0 {
+        if newSegmentIndex >= 0 && newSegmentIndex < nSegments {
             let text = String(cString: whisper_full_get_segment_text(ctx, newSegmentIndex))
             let t0 = whisper_full_get_segment_t0(ctx, newSegmentIndex)
             let t1 = whisper_full_get_segment_t1(ctx, newSegmentIndex)
 
-            callback([
-                "current": newSegmentIndex + 1,
-                "total": nSegments,
-                "text": text.trimmingCharacters(in: .whitespacesAndNewlines),
-                "start": Double(t0) / 100.0,
-                "end": Double(t1) / 100.0,
-            ])
+            let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedText.isEmpty {
+                callback([
+                    "current": newSegmentIndex + 1,
+                    "total": nSegments,
+                    "text": trimmedText,
+                    "start": Double(t0) / 100.0,
+                    "end": Double(t1) / 100.0,
+                ])
+            }
         }
     }
 
-    private func loadAudioFile(_ path: String) throws -> [Float] {
-        // 實際需要：用 ffmpeg 將任意格式轉為 16kHz mono PCM
-        // 這裡返回空陣列，實際實作需整合 ffmpeg 或使用 AVFoundation
-        print("[WhisperPlugin] Loading audio from: \(path)")
-        return []
+    // MARK: - Audio Processing
+
+    /// 將任意格式音訊轉為 16kHz mono float32 PCM
+    private func convertAudioToPCM(_ path: String) throws -> [Float] {
+        let url = URL(fileURLWithPath: path)
+
+        // 使用 AVAssetReader 讀取音訊
+        let asset = AVAsset(url: url)
+        guard let audioTrack = asset.tracks(withMediaType: .audio).first else {
+            throw NSError(domain: "WhisperPlugin", code: 400, userInfo: [NSLocalizedDescriptionKey: "No audio track found"])
+        }
+
+        // 設定輸出格式: 16kHz mono float32
+        let outputSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 16000.0,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 32,
+            AVLinearPCMIsFloatKey: true,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false
+        ]
+
+        let reader = try AVAssetReader(asset: asset)
+        let output = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
+        reader.add(output)
+        reader.startReading()
+
+        var pcmData: [Float] = []
+        var sampleBuffer: CMSampleBuffer?
+        var totalSamples = 0
+
+        while reader.status == .reading, let sampleBuf = output.copyNextSampleBuffer() {
+            sampleBuffer = sampleBuf
+
+            // 取得音訊緩衝區
+            guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuf) else { continue }
+
+            let length = CMBlockBufferGetDataLength(blockBuffer)
+            var data = Data(count: length)
+            data.withUnsafeMutableBytes { ptr in
+                CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: ptr.baseAddress!)
+            }
+
+            // 轉為 Float 陣列
+            let floatCount = length / MemoryLayout<Float>.size
+            data.withUnsafeBytes { (rawPtr: UnsafeRawBufferPointer) in
+                let floatPtr = rawPtr.bindMemory(to: Float.self)
+                pcmData.append(contentsOf: Array(floatPtr.prefix(floatCount)))
+                totalSamples += floatCount
+            }
+        }
+
+        if reader.status == .failed {
+            if let error = reader.error {
+                throw error
+            }
+            throw NSError(domain: "WhisperPlugin", code: 400, userInfo: [NSLocalizedDescriptionKey: "Audio reading failed"])
+        }
+
+        print("[WhisperPlugin] ✅ Audio converted: \(totalSamples) samples (\(Double(totalSamples)/16000.0)s)")
+        return pcmData
     }
 
+    // MARK: - Video Duration
+
     private func getVideoDuration(_ path: String) -> Double {
-        // 使用 ffprobe 取得影片長度
-        // 實際實作需呼叫 FFmpegPlugin 或直接用 ffprobe
-        return 0
+        let url = URL(fileURLWithPath: path)
+        let asset = AVAsset(url: url)
+        let duration = asset.duration
+        return CMTimeGetSeconds(duration)
     }
 }

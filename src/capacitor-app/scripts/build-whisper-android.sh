@@ -1,5 +1,5 @@
 #!/bin/bash
-# Android Whisper.cpp 編譯腳本
+# Android Whisper.cpp 編譯腳本 (增強版)
 # 用法: bash scripts/build-whisper-android.sh
 
 set -e
@@ -36,6 +36,17 @@ fi
 
 cd "$WHISPER_CPP_DIR"
 
+# 下載 small 模型 (如果不存在)
+MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
+MODEL_DEST="$CAPACITOR_DIR/android/app/src/main/assets/models/ggml-small.bin"
+mkdir -p "$(dirname "$MODEL_DEST")"
+if [ ! -f "$MODEL_DEST" ]; then
+    echo "Downloading ggml-small.bin..."
+    curl -L -o "$MODEL_DEST" "$MODEL_URL" || echo "Warning: Failed to download model, will need manual copy"
+else
+    echo "Model ggml-small.bin already exists"
+fi
+
 # 為每個 ABI 編譯
 for ABI in "${ANDROID_ABIS[@]}"; do
     echo "Building for $ABI..."
@@ -62,7 +73,14 @@ for ABI in "${ANDROID_ABIS[@]}"; do
         -DWHISPER_BUILD_TESTS=OFF \
         -DWHISPER_BUILD_EXAMPLES=OFF \
         -DBUILD_SHARED_LIBS=ON \
-        -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
+        -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+        -DWHISPER_BUILD_SDL2=OFF \
+        -DGGML_OPENMP=OFF \
+        -DGGML_OPENBLAS=OFF \
+        -DGGML_METAL=OFF \
+        -DGGML_METAL_EMBED_LIBRARY=OFF \
+        -DGGML_CUDA=OFF \
+        -DGGML_VULKAN=OFF
 
     cmake --build "$BUILD_DIR" --config Release --target whisper -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
     cmake --install "$BUILD_DIR" --config Release
@@ -84,3 +102,4 @@ cp -R "$CAPACITOR_DIR/android/whisper-install-arm64-v8a/include/"* "$HEADERS_DIR
 echo "=== Android Whisper.cpp build complete ==="
 echo "Libraries installed to android/app/src/main/jniLibs/"
 echo "Headers installed to android/app/src/main/cpp/include/"
+echo "Model installed to android/app/src/main/assets/models/ggml-small.bin"

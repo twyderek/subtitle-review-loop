@@ -1,4 +1,4 @@
-// Android build.gradle for Whisper Plugin
+// Android Whisper Plugin build.gradle
 // 檔案位置: src/capacitor-app/plugins/whisper/android/build.gradle
 
 plugins {
@@ -49,6 +49,8 @@ android {
 dependencies {
     implementation 'com.getcapacitor:capacitor:6.1.0'
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0'
+    // FFmpegKit for audio conversion and video info
+    implementation 'com.arthenica:ffmpeg-kit-full-gpl:6.0'
 }
 
 // 確保 JNI 函式庫被打包

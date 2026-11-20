@@ -1,5 +1,5 @@
 #!/bin/bash
-# iOS Whisper.cpp 編譯腳本
+# iOS Whisper.cpp 編譯腳本 (增強版)
 # 用法: bash scripts/build-whisper-ios.sh
 
 set -e
@@ -22,6 +22,16 @@ if [ ! -d "$WHISPER_CPP_DIR" ]; then
     git checkout v1.5.4  # 或最新穩定版
 else
     echo "whisper.cpp found at $WHISPER_CPP_DIR"
+fi
+
+# 下載 small 模型 (如果不存在)
+MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
+MODEL_DEST="$CAPACITOR_DIR/ios/App/App/ggml-small.bin"
+if [ ! -f "$MODEL_DEST" ]; then
+    echo "Downloading ggml-small.bin..."
+    curl -L -o "$MODEL_DEST" "$MODEL_URL" || echo "Warning: Failed to download model, will need manual copy"
+else
+    echo "Model ggml-small.bin already exists at $MODEL_DEST"
 fi
 
 # 建立建置目錄
@@ -83,9 +93,13 @@ mkdir -p "$IOS_PLUGIN_DIR/Frameworks"
 cp "$INSTALL_DIR/lib/libwhisper.a" "$IOS_PLUGIN_DIR/Frameworks/"
 cp -R "$INSTALL_DIR/include/"* "$IOS_PLUGIN_DIR/Frameworks/"
 
+# 複製模型到 App Bundle (會被包含在 .app 中)
+cp "$MODEL_DEST" "$CAPACITOR_DIR/ios/App/App/ggml-small.bin"
+
 echo "=== iOS Whisper.cpp build complete ==="
 echo "Library: $IOS_PLUGIN_DIR/Frameworks/libwhisper.a"
 echo "Headers: $IOS_PLUGIN_DIR/Frameworks/"
+echo "Model: $CAPACITOR_DIR/ios/App/App/ggml-small.bin (will be in App Bundle)"
 
 # 驗證
 lipo -info "$IOS_PLUGIN_DIR/Frameworks/libwhisper.a"
