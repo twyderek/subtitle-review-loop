@@ -33,6 +33,8 @@ function renderHeader(state: AppState): string {
     'project-list': '專案列表',
   };
 
+  const isWelcome = state.stage === 'welcome';
+
   return `
     <header class="header">
       <div class="header-title">
@@ -40,6 +42,13 @@ function renderHeader(state: AppState): string {
         <span>短影音專用 · Whisper Small · 離線優先</span>
       </div>
       <div class="header-actions">
+        ${isWelcome ? `
+          <label class="file-btn" for="videoFileInput">選擇影片</label>
+          <input type="file" id="videoFileInput" accept="video/*" style="display:none;">
+          <label class="file-btn" for="srtFileInput">選擇字幕</label>
+          <input type="file" id="srtFileInput" accept=".srt,text/plain" style="display:none;">
+          <button class="btn primary" id="newProjectBtn">新建專案</button>
+        ` : ''}
         ${state.stage !== 'welcome' && state.stage !== 'settings' && state.stage !== 'project-list' ? `
           <div class="stage-tabs" id="stageTabs">
             <button class="tab-btn ${state.stage === 'proofread' ? 'active' : ''}" data-stage="proofread">校稿</button>

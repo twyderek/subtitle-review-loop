@@ -13,11 +13,8 @@ project 'App', {
 }
 
 def capacitor_pods
-  # Capacitor 核心
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-
-  # Capacitor 插件
   pod 'CapacitorFilesystem', :path => '../../node_modules/@capacitor/filesystem'
   pod 'CapacitorShare', :path => '../../node_modules/@capacitor/share'
   pod 'CapacitorHaptics', :path => '../../node_modules/@capacitor/haptics'

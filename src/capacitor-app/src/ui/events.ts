@@ -78,6 +78,33 @@ function setupHeaderEvents(state: AppState): void {
     handleBackNavigation(state);
   });
 
+  // 新建專案按鈕
+  const newProjectBtn = document.getElementById('newProjectBtn');
+  newProjectBtn?.addEventListener('click', () => {
+    handleNewProject(state);
+  });
+
+  // 影片檔案選擇
+  const videoFileInput = document.getElementById('videoFileInput') as HTMLInputElement;
+  videoFileInput?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+      await handleVideoFileSelect(state, file);
+    }
+    // 重置 input 值以便重複選擇同一檔案
+    if (videoFileInput) videoFileInput.value = '';
+  });
+
+  // 字幕檔案選擇
+  const srtFileInput = document.getElementById('srtFileInput') as HTMLInputElement;
+  srtFileInput?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+      await handleSrtFileSelect(state, file);
+    }
+    if (srtFileInput) srtFileInput.value = '';
+  });
+
   // Logo/標題點擊回歡迎頁
   const headerTitle = document.querySelector('.header-title');
   headerTitle?.addEventListener('click', () => {
@@ -944,6 +971,58 @@ function showConfirmModal(
     ],
   });
   renderApp(state);
+}
+
+async function handleVideoFileSelect(state: AppState, file: File): Promise<void> {
+  try {
+    // 驗證影片
+    const validation = validateVideoFile({ size: file.size, name: file.name } as File);
+    if (!validation.valid) {
+      StateActions.showToast(state, 'error', validation.error || '影片驗證失敗');
+      return;
+    }
+
+    // 建立物件 URL 用於預覽
+    const previewUri = URL.createObjectURL(file);
+
+    // 驗證長度 (mock 模式下固定返回 120 秒)
+    const durationCheck = await FFmpegService.validateDuration(previewUri);
+    if (!durationCheck.valid) {
+      StateActions.showToast(state, 'error', durationCheck.error || '影片長度驗證失敗');
+      return;
+    }
+
+    // 複製到應用沙盒
+    const videoUri = await FileService.copyToSandbox(URL.createObjectURL(file), `video_${Date.now()}.mp4`);
+
+    // 詢問是否有既有字幕
+    showConfirmModal(state, '載入字幕', '是否要載入既有的 SRT 字幕檔？', async () => {
+      const srtFileInput = document.getElementById('srtFileInput') as HTMLInputElement;
+      srtFileInput?.click();
+    }, () => {
+      // 無既有字幕，進行語音轉錄
+      initializeProject(state, videoUri, { name: file.name, size: file.size, uri: videoUri, mimeType: file.type }, durationCheck.duration, [], '');
+      startTranscription(state, videoUri);
+    });
+
+  } catch (error) {
+    StateActions.showToast(state, 'error', `載入影片失敗：${error}`);
+  }
+}
+
+async function handleSrtFileSelect(state: AppState, file: File): Promise<void> {
+  try {
+    const validation = validateSubtitleFile({ size: file.size, name: file.name } as File);
+    if (!validation.valid) {
+      StateActions.showToast(state, 'error', validation.error || '字幕驗證失敗');
+      return;
+    }
+    const srtText = await file.text();
+    const cues = parseSrt(srtText);
+    initializeProject(state, state.videoUri || '', { name: file.name, size: file.size, uri: '', mimeType: file.type }, state.videoInfo?.duration || 0, cues, file.name);
+  } catch (error) {
+    StateActions.showToast(state, 'error', `載入字幕失敗：${error}`);
+  }
 }
 
 async function saveCurrentProject(state: AppState): Promise<void> {

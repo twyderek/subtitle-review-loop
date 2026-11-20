@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "subtitle-review-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8787,
+      "cwd": "${workspaceFolder}/src/capacitor-app",
+      "url": "http://localhost:8787"
+    }
+  ]
+}
