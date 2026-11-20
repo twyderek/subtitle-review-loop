@@ -26,3 +26,8 @@ video/**/10_report/*.png
 offline-subtitle-factory-plan/app/jobs/
 .DS_Store
 Thumbs.db
+acceptance-v052-nvidia-20261120/
+offline-subtitle-factory-app/
+offline-subtitle-factory-plan/
+claude/
+video/
