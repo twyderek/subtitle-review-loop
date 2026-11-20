@@ -84,6 +84,8 @@
     .stage-panel.active { display: grid; grid-template-rows: auto 1fr; }
     .tool-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
     .search { flex: 1 1 240px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #0a1224; outline: none; }
+    .time-tools { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .time-tools input { width: 92px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #0a1224; }
     .cue-list { min-height: 0; overflow: auto; padding: 12px 14px 20px; }
     .cue { display: grid; grid-template-columns: 84px 1fr; gap: 10px; margin-bottom: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
     .cue.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -91,6 +93,11 @@
     .cue-meta { display: flex; flex-direction: column; gap: 7px; align-items: stretch; }
     .cue-number { color: var(--accent); font-weight: 700; font-size: 18px; }
     .time { color: var(--muted); font-size: 12px; line-height: 1.35; word-break: break-word; }
+    .cue-duration { display: grid; gap: 5px; }
+    .cue-duration label { color: var(--muted); font-size: 11px; }
+    .cue-duration input { width: 100%; min-height: 30px; padding: 0 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--text); background: #0a1224; }
+    .cue-time-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cue-time-buttons button { min-height: 30px; padding: 0 7px; font-size: 12px; }
     .cue textarea { width: 100%; min-height: 78px; resize: vertical; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #091225; outline: none; line-height: 1.45; }
     .cue textarea:focus { border-color: var(--accent); }
     .chip { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--good); font-size: 12px; }
@@ -168,6 +175,12 @@
           <section id="proofreadPanel" class="stage-panel active">
             <div class="tool-row">
               <input id="search" class="search" type="search" placeholder="搜尋字幕文字">
+              <div class="time-tools" aria-label="Subtitle duration batch controls">
+                <span class="hint">每句秒數</span>
+                <input id="timeAdjustSeconds" type="number" min="0.1" step="0.1" value="0.5">
+                <button id="shortenAllCues" type="button">全片每句 -</button>
+                <button id="extendAllCues" type="button">全片每句 +</button>
+              </div>
               <button id="saveSrt">另存 SRT</button>
             </div>
             <div class="cue-list" id="cueList"></div>
@@ -282,7 +295,8 @@
     const ids = [
       "video", "cueList", "status", "currentText", "currentMeta", "currentRuleState",
       "cueCount", "changedCount", "warningCount", "clock", "burnCaption", "burnOverlay",
-      "proofreadPanel", "burnPanel", "stageProofread", "stageBurn", "search", "commandBox"
+      "proofreadPanel", "burnPanel", "stageProofread", "stageBurn", "search", "commandBox",
+      "timeAdjustSeconds", "shortenAllCues", "extendAllCues"
     ];
     const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
     const settingIds = ["fontFamily", "fontSize", "fontColor", "outlineColor", "outlineWidth", "subtitlePosition", "marginV", "bold"];
@@ -294,6 +308,8 @@
     document.getElementById("downloadSrt").addEventListener("click", downloadSrt);
     document.getElementById("saveSrt").addEventListener("click", saveSrt);
     document.getElementById("savePackage").addEventListener("click", saveReviewPackage);
+    el.shortenAllCues.addEventListener("click", () => adjustAllCueDurations(-getTimeAdjustSeconds()));
+    el.extendAllCues.addEventListener("click", () => adjustAllCueDurations(getTimeAdjustSeconds()));
     document.getElementById("back5").addEventListener("click", () => el.video.currentTime = Math.max(0, el.video.currentTime - 5));
     document.getElementById("forward5").addEventListener("click", () => el.video.currentTime = Math.min(el.video.duration || Infinity, el.video.currentTime + 5));
     document.getElementById("playPause").addEventListener("click", () => el.video.paused ? el.video.play() : el.video.pause());
@@ -385,6 +401,8 @@
             endRaw: match ? match[2] : "00:00:00,000",
             start: match ? parseTime(match[1]) : 0,
             end: match ? parseTime(match[2]) : 0,
+            originalStart: match ? parseTime(match[1]) : 0,
+            originalEnd: match ? parseTime(match[2]) : 0,
             text: textLines.join("\n").trim(),
             originalText: textLines.join("\n").trim()
           };
@@ -407,12 +425,23 @@
           <div class="cue-meta">
             <div class="cue-number">#${index + 1}</div>
             <div class="time">${cue.startRaw}<br>${cue.endRaw}</div>
+            <div class="cue-duration">
+              <label>長度（秒）</label>
+              <input class="duration-input" type="number" min="0.1" step="0.1" value="${formatDuration(cue.end - cue.start)}" aria-label="字幕 ${index + 1} 長度秒數">
+            </div>
+            <div class="cue-time-buttons">
+              <button class="shorten-cue" type="button" title="縮短單句字幕時間">-</button>
+              <button class="extend-cue" type="button" title="延長單句字幕時間">+</button>
+            </div>
             <button type="button" title="跳到此字幕">跳轉</button>
             <span class="${hasRuleWarning(cue.text) ? "chip warn" : "chip"}">${hasRuleWarning(cue.text) ? "待檢查" : "OK"}</span>
           </div>
           <textarea aria-label="字幕 ${index + 1}">${escapeHtml(cue.text)}</textarea>
         `;
-        item.querySelector("button").addEventListener("click", () => jumpToCue(index));
+        item.querySelector(".duration-input").addEventListener("change", (event) => setCueDuration(index, Number(event.target.value)));
+        item.querySelector(".shorten-cue").addEventListener("click", () => adjustCueDuration(index, -getTimeAdjustSeconds()));
+        item.querySelector(".extend-cue").addEventListener("click", () => adjustCueDuration(index, getTimeAdjustSeconds()));
+        item.querySelector(".cue-meta > button").addEventListener("click", () => jumpToCue(index));
         item.querySelector("textarea").addEventListener("input", (event) => updateCue(index, event.target.value));
         fragment.appendChild(item);
       });
@@ -422,8 +451,7 @@
 
     function updateCue(index, value) {
       state.cues[index].text = value;
-      if (value !== state.cues[index].originalText) state.changed.add(index);
-      else state.changed.delete(index);
+      syncChangedState(index);
       const cueNode = el.cueList.querySelector(`[data-index="${index}"]`);
       if (cueNode) {
         cueNode.classList.toggle("changed", state.changed.has(index));
@@ -435,6 +463,71 @@
       updateStats();
       updateActiveCue(true);
       updateBurnPreview();
+    }
+
+    function getTimeAdjustSeconds() {
+      const value = Number(el.timeAdjustSeconds.value);
+      return Number.isFinite(value) && value > 0 ? value : 0.5;
+    }
+
+    function formatDuration(seconds) {
+      return Math.max(0, seconds).toFixed(1);
+    }
+
+    function syncCueRaw(cue) {
+      cue.startRaw = formatSrtTime(cue.start);
+      cue.endRaw = formatSrtTime(cue.end);
+    }
+
+    function syncChangedState(index) {
+      const cue = state.cues[index];
+      const changed = cue.text !== cue.originalText ||
+        Math.abs(cue.start - cue.originalStart) > 0.001 ||
+        Math.abs(cue.end - cue.originalEnd) > 0.001;
+      if (changed) state.changed.add(index);
+      else state.changed.delete(index);
+    }
+
+    function getCueEndLimit(index) {
+      const nextCue = state.cues[index + 1];
+      if (nextCue) return Math.max(state.cues[index].start + 0.1, nextCue.start - 0.001);
+      if (Number.isFinite(el.video.duration) && el.video.duration > 0) return el.video.duration;
+      return Infinity;
+    }
+
+    function setCueDuration(index, duration, options = {}) {
+      const cue = state.cues[index];
+      if (!cue || !Number.isFinite(duration)) return;
+      const minDuration = 0.1;
+      const limit = getCueEndLimit(index);
+      const maxDuration = Number.isFinite(limit) ? Math.max(minDuration, limit - cue.start) : Infinity;
+      const nextDuration = Math.min(Math.max(duration, minDuration), maxDuration);
+      cue.end = cue.start + nextDuration;
+      syncCueRaw(cue);
+      syncChangedState(index);
+      if (!options.silent) {
+        renderCueList();
+        setActiveCue(state.activeIndex);
+        updateBurnPreview();
+        statusMessage(`已調整第 ${index + 1} 句字幕長度為 ${formatDuration(nextDuration)} 秒`);
+      }
+    }
+
+    function adjustCueDuration(index, delta) {
+      const cue = state.cues[index];
+      if (!cue) return;
+      setCueDuration(index, cue.end - cue.start + delta);
+    }
+
+    function adjustAllCueDurations(delta) {
+      if (!state.cues.length) return;
+      state.cues.forEach((cue, index) => {
+        setCueDuration(index, cue.end - cue.start + delta, { silent: true });
+      });
+      renderCueList();
+      setActiveCue(state.activeIndex);
+      updateBurnPreview();
+      statusMessage(`已將全片每句字幕${delta > 0 ? "延長" : "縮短"} ${formatDuration(Math.abs(delta))} 秒`);
     }
 
     function jumpToCue(index) {
@@ -606,6 +699,18 @@
       const [hh, mm, rest] = value.split(":");
       const [ss, ms] = rest.split(",");
       return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + Number(ms) / 1000;
+    }
+
+    function formatSrtTime(seconds) {
+      const safeSeconds = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
+      const totalMs = Math.round(safeSeconds * 1000);
+      const ms = totalMs % 1000;
+      const totalSeconds = Math.floor(totalMs / 1000);
+      const ss = totalSeconds % 60;
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const mm = totalMinutes % 60;
+      const hh = Math.floor(totalMinutes / 60);
+      return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
     }
 
     function formatClock(seconds) {

@@ -125,6 +125,8 @@ Use stage 1 of the editor to:
 
 - watch the video beside the subtitle list
 - jump to cue times
+- manually shorten or extend a single cue duration
+- batch shorten or extend every cue duration across the whole video
 - edit typos and terminology
 - search subtitle text
 - apply subtitle rules

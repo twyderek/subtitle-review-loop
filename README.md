@@ -11,6 +11,7 @@ delivery.
 
 - Browser subtitle editor with video preview
 - SRT cue editing, search, and jump-to-cue playback controls
+- Per-cue and whole-video subtitle duration adjustment controls
 - Rule-based subtitle cleanup script
 - Safe FFmpeg burn-in subtitle script for teaching videos
 - Local server with MP4 range request support
@@ -316,6 +317,7 @@ workspace/media.rule-cleaned.srt
 
 - 載入影片與 SRT
 - 第一階段點選字幕跳到對應時間並校稿
+- 第一階段可針對單一句字幕或全片每句字幕延長／縮短顯示時間
 - 搜尋字幕文字
 - 修改錯字、斷句與專有名詞
 - 第二階段設定燒錄字幕的字型、大小、位置、顏色與外框

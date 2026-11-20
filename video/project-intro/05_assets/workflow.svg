@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07111f"/><stop offset="1" stop-color="#111827"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <style>
+      .title{font:700 96px "Microsoft JhengHei",Arial;fill:#eef6ff}
+      .node{fill:#111c32;stroke:#64d8ff;stroke-width:4;rx:34;filter:url(#glow)}
+      .label{font:700 44px "Microsoft JhengHei",Arial;fill:#eef6ff;text-anchor:middle}
+      .sub{font:400 28px "Microsoft JhengHei",Arial;fill:#a9c2dc;text-anchor:middle}
+      .line{stroke:#64d8ff;stroke-width:8;stroke-linecap:round;opacity:.8}
+    </style>
+  </defs>
+  <rect width="3840" height="2160" fill="url(#bg)"/>
+  <text x="1920" y="260" class="title" text-anchor="middle">Subtitle Review Loop Architecture</text>
+  <line x1="650" y1="870" x2="855" y2="1090" class="line"/><rect x="240" y="755" width="440" height="230" class="node"/><text x="460" y="860" class="label">Input Video</text><text x="460" y="925" class="sub">1. quality gate</text><line x1="1235" y1="1090" x2="1440" y2="870" class="line"/><rect x="825" y="975" width="440" height="230" class="node"/><text x="1045" y="1080" class="label">Rule Cleanup</text><text x="1045" y="1145" class="sub">2. quality gate</text><line x1="1820" y1="870" x2="2025" y2="1090" class="line"/><rect x="1410" y="755" width="440" height="230" class="node"/><text x="1630" y="860" class="label">Browser Review</text><text x="1630" y="925" class="sub">3. quality gate</text><line x1="2405" y1="1090" x2="2610" y2="870" class="line"/><rect x="1995" y="975" width="440" height="230" class="node"/><text x="2215" y="1080" class="label">Burn Settings</text><text x="2215" y="1145" class="sub">4. quality gate</text><line x1="2990" y1="870" x2="3195" y2="1090" class="line"/><rect x="2580" y="755" width="440" height="230" class="node"/><text x="2800" y="860" class="label">FFmpeg Sample</text><text x="2800" y="925" class="sub">5. quality gate</text><rect x="3165" y="975" width="440" height="230" class="node"/><text x="3385" y="1080" class="label">Final Export</text><text x="3385" y="1145" class="sub">6. quality gate</text>
+  <text x="1920" y="1760" font-family="Microsoft JhengHei,Arial" font-size="48" fill="#9df27d" text-anchor="middle">AI handles repetition. Humans confirm quality.</text>
+</svg>

@@ -10,14 +10,30 @@
 		"contentInset": "always",
 		"scrollEnabled": true,
 		"limitsNavBarToVisibleBounds": true,
-		"backgroundColor": "#09101f"
+		"backgroundColor": "#09101f",
+		"infoPlist": {
+			"NSDocumentsFolderUsageDescription": "需要存取文件夾以讀寫影片/字幕專案",
+			"NSPhotoLibraryUsageDescription": "需要存取相簿匯入影片",
+			"NSMicrophoneUsageDescription": "語音轉錄功能需要麥克風權限",
+			"UIFileSharingEnabled": true,
+			"LSSupportsOpeningDocumentsInPlace": true
+		}
 	},
 	"android": {
 		"allowMixedContent": true,
 		"captureInput": true,
 		"webContentsDebuggingEnabled": false,
 		"backgroundColor": "#09101f",
-		"overrideUserAgent": "SubtitleReviewApp/1.0"
+		"overrideUserAgent": "SubtitleReviewApp/1.0",
+		"permissions": [
+			"android.permission.READ_EXTERNAL_STORAGE",
+			"android.permission.WRITE_EXTERNAL_STORAGE",
+			"android.permission.MANAGE_EXTERNAL_STORAGE",
+			"android.permission.READ_MEDIA_VIDEO",
+			"android.permission.READ_MEDIA_AUDIO",
+			"android.permission.FOREGROUND_SERVICE",
+			"android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+		]
 	},
 	"plugins": {
 		"SplashScreen": {
@@ -28,6 +44,12 @@
 		},
 		"CapacitorHttp": {
 			"enabled": true
+		},
+		"Filesystem": {
+			"iosDocumentPickerMode": "import"
+		},
+		"Share": {
+			"iosShareSheetCompletion": true
 		}
 	}
 }

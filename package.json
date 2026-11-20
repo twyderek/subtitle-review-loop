@@ -10,7 +10,9 @@
     "sample:subtitles": "node scripts/burn-subtitles.mjs --sample",
     "burn:subtitles": "node scripts/burn-subtitles.mjs",
     "clean:subtitles": "node src/apply_subtitle_rules.mjs",
-    "build:toolkit": "node scripts/build-portable-toolkit.mjs"
+    "build:toolkit": "node scripts/build-portable-toolkit.mjs",
+    "video:project-intro": "node scripts/generate-project-intro-video.mjs",
+    "video:project-intro:render": "python scripts/render-project-intro-ffmpeg.py"
   },
   "engines": {
     "node": ">=20"

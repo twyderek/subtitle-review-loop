@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subtitle Review Loop Project Intro</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #050816; font-family: Arial, system-ui, sans-serif; color: #edf6ff; overflow: hidden; }
+    #root { position: relative; width: 3840px; height: 2160px; overflow: hidden; background: radial-gradient(circle at 20% 20%, rgba(100,216,255,.25), transparent 26%), radial-gradient(circle at 80% 10%, rgba(251,191,36,.16), transparent 24%), linear-gradient(135deg,#07111f,#101827 55%,#050816); }
+    .scene { position: absolute; inset: 0; padding: 180px 240px; opacity: 0; transform: translateY(80px) scale(.985); }
+    .scene.active { opacity: 1; }
+    .kicker { color: #64d8ff; font-size: 42px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+    h1 { font-size: 156px; line-height: 1.04; margin: 36px 0; max-width: 2300px; letter-spacing: -0.06em; }
+    h2 { font-size: 118px; line-height: 1.1; margin: 28px 0; max-width: 2200px; letter-spacing: -0.05em; }
+    p { font-size: 54px; line-height: 1.45; max-width: 2050px; color: #c9d7ea; }
+    .glass { background: rgba(17,28,50,.68); border: 1px solid rgba(170,220,255,.23); border-radius: 42px; box-shadow: 0 30px 90px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.18); backdrop-filter: blur(18px); }
+    .hero-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 88px; align-items: center; height: 100%; }
+    .panel { padding: 64px; }
+    .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 34px; margin-top: 56px; }
+    .card { padding: 42px; min-height: 210px; }
+    .card strong { display:block; font-size: 48px; color: #f3fbff; margin-bottom: 18px; }
+    .card span { font-size: 34px; line-height: 1.35; color: #a9c2dc; }
+    .orb { position:absolute; width: 520px; height: 520px; border-radius:50%; background: radial-gradient(circle, rgba(100,216,255,.5), rgba(100,216,255,0) 68%); filter: blur(18px); right: 310px; top: 260px; }
+    .device { width: 1380px; height: 840px; padding: 42px; border-radius: 58px; background: #0d1629; box-shadow: 0 60px 140px rgba(0,0,0,.52); border: 1px solid rgba(255,255,255,.18); transform: perspective(1600px) rotateY(-10deg) rotateX(4deg); }
+    .screen { width: 100%; height: 100%; border-radius: 36px; background: linear-gradient(135deg, #121f38, #09101f); position: relative; overflow:hidden; }
+    .screen:before { content:""; position:absolute; inset:40px; border-radius:28px; border:2px solid rgba(100,216,255,.2); }
+    .cue { position:absolute; left: 90px; right:90px; bottom: 80px; padding: 28px 46px; border-radius: 22px; background: rgba(0,0,0,.48); text-align:center; font-size:42px; font-weight:800; text-shadow:0 4px 20px #000; }
+    .timeline { display:flex; gap:22px; margin-top:54px; align-items:center; }
+    .dot { width: 54px; height:54px; border-radius:50%; background:#64d8ff; box-shadow:0 0 34px #64d8ff; }
+    .bar { flex:1; height:12px; border-radius:99px; background:linear-gradient(90deg,#64d8ff,#9df27d,#fbbf24); }
+    .architecture { width: 100%; margin-top: 80px; display:grid; grid-template-columns: repeat(5, 1fr); gap: 28px; align-items:center; }
+    .arch-node { padding: 42px 24px; text-align:center; border-radius:34px; background:rgba(17,28,50,.82); border:1px solid rgba(100,216,255,.35); font-size: 38px; font-weight: 800; min-height: 170px; display:flex; align-items:center; justify-content:center; }
+    .caption { position:absolute; left: 420px; right:420px; bottom: 110px; min-height: 126px; padding: 28px 54px; text-align:center; font-size: 52px; line-height:1.32; font-weight: 850; color:white; text-shadow: 0 4px 8px #000, 0 0 22px #000; background: rgba(0,0,0,.22); border-radius: 28px; }
+    .watermark { position:absolute; right: 96px; top: 78px; font-size: 34px; color:rgba(238,246,255,.5); }
+    .repo { font-size: 64px; color:#9df27d; margin-top:32px; }
+  </style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-width="3840" data-height="2160" data-start="0" data-duration="330">
+  <audio id="audio-narration" src="audio/narration.wav" data-start="0" data-duration="330" data-track-index="10" data-volume="1"></audio>
+  <audio id="audio-bgm" src="audio/bgm.wav" data-start="0" data-duration="330" data-track-index="1" data-volume="0.18"></audio>
+  <div class="watermark">Subtitle Review Loop for Codex</div>
+  <section id="scene-1" class="clip scene" data-start="0" data-duration="18">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 01 · Opening Hook</div>
+          <h1>AI 字幕品質工廠</h1>
+          <p>如果你曾經把一支教學影片交給自動轉錄，最後卻花更多時間修錯字、調字幕位置、重燒影片，那這個專案就是為了解決這件事而生。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><img src="assets/lecturer-reference.jpg" style="position:absolute;right:80px;bottom:0;height:92%;border-radius:32px;filter:saturate(.9) contrast(1.05);opacity:.92"><div class="cue" style="left:70px;right:48%;bottom:90px">Pixar 講師身份參考</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-2" class="clip scene" data-start="18" data-duration="22">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 02 · Project Background</div>
+          <h2>Project Background</h2>
+          <p>Subtitle Review Loop for Codex 是一套給教學影片與課程錄影使用的字幕檢閱工作流。它把自動轉錄、人工校稿、樣式設定與 FFmpeg 輸出串成可重複執行的流程。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">Subtitle Review Loop for Codex 是一套給教學影片與課程錄影使用的字幕檢閱工作流 它把自動轉錄 人工校稿 樣式設定與 FFmpeg 輸出串成可重複執行的流程</div></div></div>
+          <div class="cards"><div class="card glass"><strong>Human-in-the-loop</strong><span>先自動化，再人工確認</span></div><div class="card glass"><strong>Local-first</strong><span>影片與字幕留在本機</span></div><div class="card glass"><strong>FFmpeg-ready</strong><span>樣式設定可重複輸出</span></div><div class="card glass"><strong>Teaching video QA</strong><span>避免字幕遮擋重點畫面</span></div></div>
+        </div>
+      </div>
+    </section>
+<section id="scene-3" class="clip scene" data-start="40" data-duration="24">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 03 · Problem Statement</div>
+          <h2>Problem Statement</h2>
+          <p>真正的痛點不是產生 SRT，而是 ASR 會誤判專有名詞，Windows 容易遇到編碼問題，字幕還可能遮住教學平台的按鈕與內容。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">真正的痛點不是產生 SRT 而是 ASR 會誤判專有名詞 Windows 容易遇到編碼問題 字幕還可能遮住教學平台的按鈕與內容</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-4" class="clip scene" data-start="64" data-duration="24">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 04 · Solution</div>
+          <h2>Solution</h2>
+          <p>這個專案採用人機協作。機器先處理格式、規則與初稿，人再透過瀏覽器逐句確認。只有完成檢閱後，才進入燒字幕與正式輸出。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">這個專案採用人機協作 機器先處理格式 規則與初稿 人再透過瀏覽器逐句確認 只有完成檢閱後 才進入燒字幕與正式輸出</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-5" class="clip scene" data-start="88" data-duration="28">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 05 · Architecture</div>
+          <h2>Architecture</h2>
+          <p>架構很輕量。前端是一個本機字幕編輯網頁，後端是 Node.js 靜態服務與儲存 API，影片輸出交給 FFmpeg，所有中間成果都保存在 workspace 與 review-output。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="architecture"><div class="arch-node">Browser Editor</div><div class="arch-node">Node Server</div><div class="arch-node">Workspace</div><div class="arch-node">FFmpeg</div><div class="arch-node">QA Export</div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-6" class="clip scene" data-start="116" data-duration="24">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 06 · Core Feature One</div>
+          <h2>Core Feature One</h2>
+          <p>第一階段是字幕校稿。你可以一邊看影片，一邊搜尋 cue、跳轉時間軸、修正錯字，並把規則清理後的字幕變成可確認的正式版本。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">第一階段是字幕校稿 你可以一邊看影片 一邊搜尋 cue 跳轉時間軸 修正錯字 並把規則清理後的字幕變成可確認的正式版本</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-7" class="clip scene" data-start="140" data-duration="26">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 07 · Core Feature Two</div>
+          <h2>Core Feature Two</h2>
+          <p>第二階段是燒錄預覽。系統會讓你調整字幕大小、位置、顏色、字型與外框，並把設定寫成 burn-settings.json，供後續 FFmpeg 使用。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">第二階段是燒錄預覽 系統會讓你調整字幕大小 位置 顏色 字型與外框 並把設定寫成 burn-settings.json 供後續 FFmpeg 使用</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-8" class="clip scene" data-start="166" data-duration="28">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 08 · Workflow</div>
+          <h2>Workflow</h2>
+          <p>完整流程從影片與規則檔開始，產生草稿字幕後進入瀏覽器校稿，再輸出修正後 SRT、燒錄設定、manifest 與樣片，最後才產生正式影片。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <img src="assets/workflow.svg" style="width:100%;max-height:980px;margin-top:64px;border-radius:42px;box-shadow:0 40px 120px rgba(0,0,0,.4)">
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-9" class="clip scene" data-start="194" data-duration="26">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 09 · Demo</div>
+          <h2>Demo</h2>
+          <p>使用者只要執行 npm run open，或在 Windows 直接點擊啟動檔，就能開啟本機服務。可攜版工具包也保留 input 與 output 資料夾，適合交給其他電腦使用。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">使用者只要執行 npm run open 或在 Windows 直接點擊啟動檔 就能開啟本機服務 可攜版工具包也保留 input 與 output 資料夾 適合交給其他電腦使用</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-10" class="clip scene" data-start="220" data-duration="28">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 10 · Technical Highlights</div>
+          <h2>Technical Highlights</h2>
+          <p>專案特別處理了 Windows UTF-8、MP4 Range Request、大檔案 hard link、字幕樣片先驗證，以及規則檔由使用者定義，不把清理規則硬寫死。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">專案特別處理了 Windows UTF-8 MP4 Range Request 大檔案 hard link 字幕樣片先驗證 以及規則檔由使用者定義 不把清理規則硬寫死</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-11" class="clip scene" data-start="248" data-duration="22">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 11 · Quality Gate</div>
+          <h2>Quality Gate</h2>
+          <p>每一次輸出前，都要檢查字幕同步、畫面遮擋、術語一致、檔案完整與 FFmpeg 參數。這不是一次性工具，而是一個品質閘門。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">每一次輸出前 都要檢查字幕同步 畫面遮擋 術語一致 檔案完整與 FFmpeg 參數 這不是一次性工具 而是一個品質閘門</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-12" class="clip scene" data-start="270" data-duration="22">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 12 · Roadmap</div>
+          <h2>Roadmap</h2>
+          <p>下一步可以加入閱讀速度警示、重疊 cue 視覺化、雙語字幕、術語表自動比對，以及更完整的一鍵樣片驗證流程。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">下一步可以加入閱讀速度警示 重疊 cue 視覺化 雙語字幕 術語表自動比對 以及更完整的一鍵樣片驗證流程</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-13" class="clip scene" data-start="292" data-duration="22">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 13 · Summary</div>
+          <h2>Summary</h2>
+          <p>Subtitle Review Loop 的核心價值很簡單：讓 AI 負責重複工作，讓人負責判斷品質，最後產出可以放心發布的教學影片字幕。</p>
+          <div class="timeline"><div class="dot"></div><div class="bar"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">Subtitle Review Loop 的核心價值很簡單 讓 AI 負責重複工作 讓人負責判斷品質 最後產出可以放心發布的教學影片字幕</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+<section id="scene-14" class="clip scene" data-start="314" data-duration="16">
+      <div class="orb"></div>
+      <div class="hero-grid">
+        <div>
+          <div class="kicker">Scene 14 · Ending</div>
+          <h2>Ending</h2>
+          <p>這是一個為真實教學現場打造的開源字幕流程。歡迎在 GitHub 使用、改造，或把它接進你的影片製作管線。</p>
+          <div class="repo">github.com/twyderek/subtitle-review-loop</div>
+        </div>
+        <div class="panel glass">
+          <div class="device"><div class="screen"><div class="cue">這是一個為真實教學現場打造的開源字幕流程 歡迎在 GitHub 使用 改造 或把它接進你的影片製作管線</div></div></div>
+          
+        </div>
+      </div>
+    </section>
+  <div class="caption" data-caption-start="0" data-caption-end="18"></div>
+<div class="caption" data-caption-start="18" data-caption-end="40"></div>
+<div class="caption" data-caption-start="40" data-caption-end="64"></div>
+<div class="caption" data-caption-start="64" data-caption-end="88"></div>
+<div class="caption" data-caption-start="88" data-caption-end="116"></div>
+<div class="caption" data-caption-start="116" data-caption-end="140"></div>
+<div class="caption" data-caption-start="140" data-caption-end="166"></div>
+<div class="caption" data-caption-start="166" data-caption-end="194"></div>
+<div class="caption" data-caption-start="194" data-caption-end="220"></div>
+<div class="caption" data-caption-start="220" data-caption-end="248"></div>
+<div class="caption" data-caption-start="248" data-caption-end="270"></div>
+<div class="caption" data-caption-start="270" data-caption-end="292"></div>
+<div class="caption" data-caption-start="292" data-caption-end="314"></div>
+<div class="caption" data-caption-start="314" data-caption-end="330"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+  const scenes = [...document.querySelectorAll('.scene')];
+  const captions = [...document.querySelectorAll('.caption')];
+  gsap.set(scenes[0], { opacity: 1, y: 0, scale: 1 });
+  gsap.set(captions, { opacity: 0, y: 30 });
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  scenes.forEach((scene, index) => {
+    const start = Number(scene.dataset.start);
+    tl.to(scene, { opacity: 1, y: 0, scale: 1, duration: 1.1 }, start);
+    tl.fromTo(scene.querySelectorAll('.kicker,h1,h2,p,.timeline,.device,.architecture,img,.cards,.repo'), { opacity: 0, y: 54, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.15, stagger: .08 }, start + .2);
+    tl.to(scene.querySelector('.orb'), { x: -80, y: 40, scale: 1.15, duration: Number(scene.dataset.duration), ease: 'none' }, start);
+    if (index < scenes.length - 1) tl.to(scene, { opacity: 0, y: -80, scale: 1.015, duration: .9, ease: 'power2.inOut' }, start + Number(scene.dataset.duration) - .9);
+  });
+  captions.forEach((caption) => {
+    const start = Number(caption.dataset.captionStart);
+    const end = Number(caption.dataset.captionEnd);
+    tl.to(caption, { opacity: 1, y: 0, duration: .35 }, start + .3);
+    tl.to(caption, { opacity: 0, y: -20, duration: .25 }, end - .35);
+  });
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = tl;
+</script>
+</body>
+</html>

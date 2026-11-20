@@ -33,6 +33,8 @@ Use stage 1 to:
 
 - watch the video while editing subtitle cues
 - jump to any cue time
+- manually shorten or extend the duration of one cue
+- shorten or extend every cue in the whole video by the same number of seconds
 - search subtitle text
 - apply the subtitle cleanup rules
 - download or save an edited SRT
