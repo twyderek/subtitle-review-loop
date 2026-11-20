@@ -16,6 +16,10 @@ on:
         type: choice
         options: [all, ios, android]
         default: 'all'
+      ios_signing:
+        description: 'Enable iOS code signing (requires secrets)'
+        type: boolean
+        default: false
 
 env:
   NODE_VERSION: '22'
@@ -161,7 +165,7 @@ jobs:
     needs: build-frontend
     runs-on: macos-latest
     timeout-minutes: 60
-    if: ${{ github.event.inputs.platform != 'android' || github.event_name != 'workflow_dispatch' }}
+    if: ${{ github.event.inputs.platform != 'android' || github.event_name != 'workflow_dispatch' || inputs.ios_signing == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -204,7 +208,7 @@ jobs:
 
       - name: Import Code Signing
         uses: apple-actions/import-codesign-certs@v3
-        if: ${{ secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
+        if: ${{ inputs.ios_signing == true && secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
         with:
           p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
@@ -222,7 +226,7 @@ jobs:
             archive
 
       - name: Export IPA
-        if: ${{ secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
+        if: ${{ inputs.ios_signing == true && secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
         run: |
           cd src/capacitor-app/ios
           xcodebuild -exportArchive \
