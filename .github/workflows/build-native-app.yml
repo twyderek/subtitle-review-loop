@@ -127,6 +127,11 @@ jobs:
           cd src/capacitor-app
           npx cap sync android
 
+      - name: Generate Gradle Wrapper
+        run: |
+          cd src/capacitor-app/android
+          gradle wrapper --gradle-version 8.5
+
       - name: Build Whisper for Android
         run: |
           cd src/capacitor-app
@@ -134,9 +139,6 @@ jobs:
           ANDROID_NDK_HOME=${{ env.ANDROID_NDK_HOME }} ./scripts/build-whisper-android.sh
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
-
-      - name: Make gradlew executable
-        run: chmod +x src/capacitor-app/android/gradlew
 
       - name: Build Android Release
         run: |
