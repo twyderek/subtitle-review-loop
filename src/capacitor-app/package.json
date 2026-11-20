@@ -15,7 +15,8 @@
     "android:build": "node scripts/build-android.mjs",
     "build:all": "node scripts/build-all.mjs",
     "whisper:build:ios": "bash scripts/build-whisper-ios.sh",
-    "whisper:build:android": "bash scripts/build-whisper-android.sh"
+    "whisper:build:android": "bash scripts/build-whisper-android.sh",
+    "models:copy": "bash scripts/copy-models.sh"
   },
   "dependencies": {
     "@capacitor/core": "^6.1.0",

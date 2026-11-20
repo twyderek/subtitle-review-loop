@@ -1,0 +1,43 @@
+// FileSystemExt Android Plugin build.gradle
+// 檔案位置: src/capacitor-app/plugins/filesystem/android/build.gradle
+
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-android-extensions'
+}
+
+android {
+    namespace 'com.subtitle.review.filesystem'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java']
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.getcapacitor:capacitor:6.1.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0'
+}
