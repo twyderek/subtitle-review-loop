@@ -204,7 +204,7 @@ jobs:
 
       - name: Import Code Signing
         uses: apple-actions/import-codesign-certs@v3
-        if: ${{ secrets.IOS_P12_BASE64 != '' }}
+        if: ${{ secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
         with:
           p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
@@ -222,7 +222,7 @@ jobs:
             archive
 
       - name: Export IPA
-        if: ${{ secrets.IOS_P12_BASE64 != '' }}
+        if: ${{ secrets.IOS_P12_BASE64 != '' && secrets.IOS_P12_PASSWORD != '' }}
         run: |
           cd src/capacitor-app/ios
           xcodebuild -exportArchive \
