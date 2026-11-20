@@ -1,0 +1,274 @@
+# GitHub Actions CI/CD for Native App
+# 檔案位置: .github/workflows/build-native-app.yml
+
+name: Build Native App (iOS + Android)
+
+on:
+  push:
+    branches: [main, native-app-short-video]
+    tags: ['v*']
+  pull_request:
+    branches: [main, native-app-short-video]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Build platform'
+        type: choice
+        options: [all, ios, android]
+        default: 'all'
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '17'
+  GRADLE_OPTS: '-Xmx4g -Dorg.gradle.jvmargs=-Xmx4g'
+
+jobs:
+  # ========== 前端建置 (共用) ==========
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    outputs:
+      dist_hash: ${{ steps.hash.outputs.hash }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/capacitor-app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd src/capacitor-app
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd src/capacitor-app
+          npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: src/capacitor-app/dist/
+          retention-days: 7
+
+      - name: Compute dist hash
+        id: hash
+        run: |
+          cd src/capacitor-app/dist
+          echo "hash=$(find . -type f -exec sha256sum {} + | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+  # ========== Android 建置 ==========
+  build-android:
+    name: Build Android (AAB + APK)
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: ${{ github.event.inputs.platform != 'ios' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: src/capacitor-app/dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/capacitor-app/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          ndk-version: r26d
+          cmdline-tools-version: latest
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('src/capacitor-app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          cd src/capacitor-app
+          npm ci
+
+      - name: Capacitor Sync Android
+        run: |
+          cd src/capacitor-app
+          npx cap sync android
+
+      - name: Build Whisper for Android
+        run: |
+          cd src/capacitor-app
+          chmod +x scripts/build-whisper-android.sh
+          ANDROID_NDK_HOME=${{ env.ANDROID_NDK_HOME }} ./scripts/build-whisper-android.sh
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+
+      - name: Make gradlew executable
+        run: chmod +x src/capacitor-app/android/gradlew
+
+      - name: Build Android Release
+        run: |
+          cd src/capacitor-app/android
+          ./gradlew clean assembleRelease bundleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx4g"
+
+      - name: Verify AAB
+        run: |
+          cd src/capacitor-app/android
+          ls -la app/build/outputs/bundle/release/
+          ls -la app/build/outputs/apk/release/
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: |
+            src/capacitor-app/android/app/build/outputs/bundle/release/*.aab
+            src/capacitor-app/android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+  # ========== iOS 建置 ==========
+  build-ios:
+    name: Build iOS (IPA)
+    needs: build-frontend
+    runs-on: macos-latest
+    timeout-minutes: 60
+    if: ${{ github.event.inputs.platform != 'android' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: src/capacitor-app/dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/capacitor-app/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd src/capacitor-app
+          npm ci
+
+      - name: Capacitor Sync iOS
+        run: |
+          cd src/capacitor-app
+          npx cap sync ios
+
+      - name: Build Whisper for iOS
+        run: |
+          cd src/capacitor-app
+          chmod +x scripts/build-whisper-ios.sh
+          ./scripts/build-whisper-ios.sh
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      - name: Import Code Signing
+        uses: apple-actions/import-codesign-certs@v3
+        if: ${{ secrets.IOS_P12_BASE64 != '' }}
+        with:
+          p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+          keychain: ${{ runner.temp }}/build.keychain
+
+      - name: Build iOS Archive
+        run: |
+          cd src/capacitor-app/ios
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath ../../dist-capacitor-ios/App.xcarchive \
+            -allowProvisioningUpdates \
+            archive
+
+      - name: Export IPA
+        if: ${{ secrets.IOS_P12_BASE64 != '' }}
+        run: |
+          cd src/capacitor-app/ios
+          xcodebuild -exportArchive \
+            -archivePath ../../dist-capacitor-ios/App.xcarchive \
+            -exportPath ../../dist-capacitor-ios/ipa \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload iOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: |
+            dist-capacitor-ios/ipa/*.ipa
+            dist-capacitor-ios/App.xcarchive
+          retention-days: 30
+
+  # ========== 發布 ==========
+  release:
+    name: Create Release
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-build
+          path: android-artifacts/
+
+      - name: Download iOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-build
+          path: ios-artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            android-artifacts/*.aab
+            android-artifacts/*.apk
+            ios-artifacts/*.ipa
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}

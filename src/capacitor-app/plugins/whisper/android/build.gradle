@@ -1,0 +1,62 @@
+// Android build.gradle for Whisper Plugin
+// 檔案位置: src/capacitor-app/plugins/whisper/android/build.gradle
+
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-android-extensions'
+}
+
+android {
+    namespace 'com.subtitle.review.whisper'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    // 設定 JNI 函式庫目錄
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            cpp.srcDirs = ['src/main/cpp']
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.getcapacitor:capacitor:6.1.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0'
+}
+
+// 確保 JNI 函式庫被打包
+tasks.withType(com.android.build.gradle.tasks.MergeNativeLibs) {
+    doLast {
+        def jniLibsDir = file("src/main/jniLibs")
+        if (jniLibsDir.exists()) {
+            outputs.upToDateWhen { false }
+        }
+    }
+}

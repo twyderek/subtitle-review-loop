@@ -1,0 +1,35 @@
+{
+  "name": "@subtitle-review/whisper-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Whisper.cpp native plugin for Capacitor (iOS/Android)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build:ios": "bash ../../scripts/build-whisper-ios.sh",
+    "build:android": "bash ../../scripts/build-whisper-android.sh"
+  },
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    },
+    "android": {
+      "src": "android"
+    }
+  },
+  "files": [
+    "ios",
+    "android",
+    "index.js",
+    "index.d.ts"
+  ],
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "whisper",
+    "asr",
+    "speech-to-text"
+  ],
+  "author": "Subtitle Review",
+  "license": "MIT"
+}
